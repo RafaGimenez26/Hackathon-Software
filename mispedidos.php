@@ -31,7 +31,7 @@
       <!-- Carrito de compras -->
             <div class="card mb-4">
                 <div class="card-header bg-light">
-                    <h4 class="mb-0"><i class="bi bi-cart3"></i> Carrito de Compras</h4>
+                    <h4 class="mb-0"><i class="bi bi-cart3"></i> Carrito de Pedido</h4>
                 </div>
                 <div class="card-body">
                     <!-- Item del carrito -->
@@ -87,7 +87,7 @@
                             <h4 class="mb-2">Total: $4.800</h4>
                             <p class="mb-3">2 productos de 2 productores diferentes</p>
                             <button class="btn btn-light btn-lg">
-                                <i class="bi bi-credit-card"></i> Proceder al Pago
+                                <i class="bi bi-basket"></i> Reservar
                             </button>
                         </div>
                     </div>

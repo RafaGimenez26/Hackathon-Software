@@ -131,7 +131,7 @@
                             <input type="number" value="1" min="1" max="15" class="cantidad-input form-control">
                             <span>kg</span>
                             <button class="btn btn-primary-custom btn-sm-custom">
-                                <i class="bi bi-cart-plus"></i> Agregar
+                                <i class="bi bi-basket"></i> Agregar
                             </button>
                         </div>
                     </div>
@@ -176,7 +176,7 @@
                             <input type="number" value="1" min="1" max="20" class="cantidad-input form-control">
                             <span>u</span>
                             <button class="btn btn-primary-custom btn-sm-custom">
-                                <i class="bi bi-cart-plus"></i> Agregar
+                                <i class="bi bi-basket"></i> Agregar
                             </button>
                         </div>
                     </div>
@@ -221,7 +221,7 @@
                             <input type="number" value="1" min="1" max="5" class="cantidad-input form-control">
                             <span>kg</span>
                             <button class="btn btn-primary-custom btn-sm-custom">
-                                <i class="bi bi-cart-plus"></i> Agregar
+                                <i class="bi bi-basket"></i> Agregar
                             </button>
                         </div>
                     </div>
@@ -266,7 +266,7 @@
                             <input type="number" value="1" min="1" max="10" class="cantidad-input form-control">
                             <span>kg</span>
                             <button class="btn btn-primary-custom btn-sm-custom">
-                                <i class="bi bi-cart-plus"></i> Agregar
+                                <i class="bi bi-basket"></i> Agregar
                             </button>
                         </div>
                     </div>
