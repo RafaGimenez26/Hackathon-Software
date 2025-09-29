@@ -92,7 +92,48 @@
             </div>
 
             <div class="row g-3">
-                <!-- Producto 1 -->
+                
+            <!-- Contenedor Estático de Reciclaje - Siempre Primero -->
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="producto-card recycle-card">
+                    <img src="img/frascos.jpg" alt="Trae tus frascos y reciclá" class="product-image-placeholder" />
+                    
+                    <div class="recycle-header">
+                        <div class="recycle-icon">
+                            <i class="bi bi-recycle" style="font-size: 2.5rem; color: #4CAF50;"></i>
+                        </div>
+                        <h3 class="recycle-title">¡Reciclá con Nosotros!</h3>
+                    </div>
+                    
+                    <div class="recycle-content">
+                        <h4 style="color: #4CAF50; font-weight: 700; margin-bottom: 15px;">
+                            Traé tus frascos y obtené descuentos
+                        </h4>
+                        
+                        <ul class="recycle-benefits">
+                            <li><i class="bi bi-check-circle-fill"></i> 10% OFF en productos a granel</li>
+                            <li><i class="bi bi-check-circle-fill"></i> 15% OFF en dulces y conservas</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Cuidamos el medio ambiente</li>
+                        </ul>
+                        
+                        <div class="recycle-info">
+                            <p><strong>Frascos aceptados:</strong></p>
+                            <p style="font-size: 0.9rem; color: #666;">
+                                Mermeladas, salsas, pickles - limpios y con tapa
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="recycle-cta">
+                        <button class="btn btn-success btn-sm-custom w-100">
+                            <i class="bi bi-info-circle"></i> Más Información
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Producto 1 -->
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="producto-card">
                         <img src="img/tomates.jpg" alt="Tomates Cherry Orgánicos" class="product-image-placeholder" />

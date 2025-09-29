@@ -116,7 +116,7 @@
             animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes slideIn {
+        /* @keyframes slideIn {
             from { 
                 opacity: 0; 
                 transform: translateY(20px) scale(0.98);
@@ -125,6 +125,88 @@
                 opacity: 1; 
                 transform: translateY(0) scale(1);
             }
+        } */
+
+        /* Estilos especiales para la tarjeta de reciclaje */
+        .recycle-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 3px solid #4CAF50;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recycle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(45deg, #4CAF50, #66BB6A, #81C784);
+        }
+
+        .recycle-header {
+            text-align: center;
+            padding: 15px 0;
+        }
+
+        .recycle-title {
+            color: #2d3748;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .recycle-content {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        .recycle-benefits {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .recycle-benefits li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .recycle-benefits li i {
+            color: #4CAF50;
+            font-size: 1.2rem;
+        }
+
+        .recycle-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed #4CAF50;
+        }
+
+        .recycle-cta {
+            margin-top: 15px;
+        }
+
+        /* Animación sutil para llamar la atención */
+        .recycle-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.3);
+        }
+
+        .recycle-icon i {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .tab-title {
