@@ -1,0 +1,19 @@
+# Dependencias
+vendor/
+
+# Credenciales y configuración sensible
+.env
+conexion.php
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales de PHP
+*.log
+*.cache
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.sublime-*
