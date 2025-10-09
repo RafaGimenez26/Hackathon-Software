@@ -3,7 +3,6 @@ vendor/
 
 # Credenciales y configuración sensible
 .env
-conexion.php
 
 # Archivos de sistema
 .DS_Store
