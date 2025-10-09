@@ -97,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
       <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
       <a class="tab-btn active" href="cargar_productos.php">📦 Acceso Productor</a>
-      <a class="tab-btn" href="mispedidos.php">🛍️ Mis Pedidos</a>
+      <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a>
     </div>
 
     <div class="tab-content active"> <h2 class="tab-title">Acceso y Gestión de Productos</h2>
