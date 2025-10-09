@@ -147,7 +147,7 @@ function getCategoriaEmoji($categoria) {
             <a class="tab-btn active" href="index.php">🛒 Ver Productos</a>
             <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
             <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
-            <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a>
+            <a class="tab-btn" href="loginus.php">🛍️ Mis Pedidos</a>
         </div>
 
         <!-- CONTENIDO DE PRODUCTOS -->
