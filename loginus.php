@@ -61,6 +61,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <title>Inicio de Sesión</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h2>Iniciar Sesión</h2>
