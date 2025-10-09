@@ -4,6 +4,7 @@ vendor/
 # Credenciales y configuración sensible
 .env
 
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db
