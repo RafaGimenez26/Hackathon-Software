@@ -1,6 +1,6 @@
 <?php 
 // Incluir archivo de conexión (asumiendo que existe)
-require_once 'conexion.php';
+require 'conexion.php';
 
 // Configuración de paginado
 $productos_por_pagina = 11; // 11 + 1 de reciclaje = 12 cards por página

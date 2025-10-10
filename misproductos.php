@@ -4,9 +4,9 @@
 // ======================================================================
 session_start();
 
-// Si el usuario ya está logueado, redirigir a misproductos.php
-if (isset($_SESSION['productor_id'])) {
-    header('Location: misproductos.php');
+// Si el usuario ya está logueado, redirigir a la página de carga de productos
+if (isset($_SESSION['ProductorID'])) {
+    header('Location: dashboard_productor.php');
     exit();
 }
 
@@ -24,8 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // ------------------------------------
     $host = 'localhost'; 
     $db = 'MercadoAgricolaLocal'; 
-    $user = 'root'; // <-- ¡VERIFICA TUS CREDENCIALES!
-    $pass = ''; // <-- ¡VERIFICA TUS CREDENCIALES!
+    $user = 'root';
+    $pass = '';
     $charset = 'utf8mb4';
 
     $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -51,18 +51,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error_login = "Por favor, ingresa tu email y contraseña.";
         } else {
             try {
-                $stmt = $pdo->prepare("SELECT ProductorID, NombreRazonSocial, PasswordHash FROM Productores WHERE CorreoElectronico = ?");
+                $stmt = $pdo->prepare("SELECT ProductorID, NombreRazonSocial, PasswordHash FROM Productores WHERE CorreoElectronico = ? AND Activo = 1");
                 $stmt->execute([$email]);
                 $productor = $stmt->fetch();
 
                 if ($productor && password_verify($password_ingresada, $productor['PasswordHash'])) {
                     
                     // Inicio de sesión exitoso
-                    $_SESSION['productor_id'] = $productor['ProductorID'];
+                    // IMPORTANTE: Usar ProductorID (con mayúscula) para consistencia
+                    $_SESSION['ProductorID'] = $productor['ProductorID'];
                     $_SESSION['nombre_productor'] = $productor['NombreRazonSocial'];
                     
-                    // Redirigir a la página de éxito
-                    header('Location: cargar_productos.php'); 
+                    // Redirigir a la página de carga de productos
+                    header('Location: dashboard_productor.php'); 
                     exit();
 
                 } else {
@@ -79,31 +80,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mercado Agrícola Local - Acceso Productores</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet"> 
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mercado Agrícola Local - Acceso Productores</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet"> 
 </head>
 <body>
-  <div class="container-custom">
-    <div class="header">
-      <h1>🌾 Mercado Agrícola Local</h1>
-      <p>Conectando productores locales con la comunidad Misionera</p>
-    </div>
+  <div class="container-custom">
+    <div class="header">
+      <h1>🌾 Mercado Agrícola Local</h1>
+      <p>Conectando productores locales con la comunidad Misionera</p>
+    </div>
 
-    <div class="nav-tabs-custom">
-      <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
-      <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
-      <a class="tab-btn active" href="cargar_productos.php">📦 Acceso Productor</a>
-      <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a>
-    </div>
+    <div class="nav-tabs-custom">
+      <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
+      <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
+      <a class="tab-btn active" href="misproductos.php">📦 Acceso Productor</a>
+      <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a>
+    </div>
 
-    <div class="tab-content active"> <h2 class="tab-title">Acceso y Gestión de Productos</h2>
+    <div class="tab-content active">
+      <h2 class="tab-title">Acceso y Gestión de Productos</h2>
 
         <?php if (!empty($error_login)): ?>
             <div class="alert alert-danger mt-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
                 <?php echo htmlspecialchars($error_login); ?>
             </div>
         <?php endif; ?>
@@ -114,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <p class="mb-4">Ingresa tu email y contraseña para gestionar tus productos y pedidos.</p>
                 <div class="row justify-content-center">
                     <div class="col-md-10">
-                        <form method="POST" action="cargar_productos.php" class="row g-3">
+                        <form method="POST" action="misproductos.php" class="row g-3">
                             <div class="col-md-5">
                                 <input type="email" class="form-control" name="email" required 
                                     placeholder="Tu email" value="<?php echo $email_previo; ?>">
@@ -185,8 +188,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
     </div>
-  </div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

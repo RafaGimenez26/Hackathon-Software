@@ -1,73 +1,91 @@
 <?php
-// Configuración de la base de datos
-$servername = "localhost";   // Cambia si usas otro host
-$username = "root";          // Usuario de MySQL
-$password = "";              // Contraseña (vacía por defecto en XAMPP)
-$dbname = "MercadoAgricolaLocal"; // Cambia por el nombre de tu base
+require 'conexion.php';
+session_start();
 
-// Crear conexión
-$conn = new mysqli($servername, $username, $password, $dbname);
+$mensaje = "";
 
-// Verificar conexión
-if ($conn->connect_error) {
-    die("Error en la conexión: " . $conn->connect_error);
-}
-
-// Verificar si se envió el formulario
+// Procesar formulario
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nombre_usuario = trim($_POST['nombre_usuario']);
     $correo = trim($_POST['correo']);
     $contrasena = trim($_POST['contrasena']);
 
-    // Validar que los campos no estén vacíos
     if (empty($nombre_usuario) || empty($correo) || empty($contrasena)) {
-        echo "Por favor, complete todos los campos.";
+        $mensaje = "Por favor, complete todos los campos.";
     } else {
-        // Encriptar la contraseña
         $hash = password_hash($contrasena, PASSWORD_DEFAULT);
 
-        // Preparar y ejecutar la inserción
-        $stmt = $conn->prepare("INSERT INTO usuarios (nombre_usuario, correo, contrasena) VALUES (?, ?, ?)");
+        $stmt = $conexion->prepare("INSERT INTO usuarios (nombre_usuario, correo, contrasena) VALUES (?, ?, ?)");
         $stmt->bind_param("sss", $nombre_usuario, $correo, $hash);
 
         if ($stmt->execute()) {
-            echo "✅ Usuario registrado correctamente.";
+            $mensaje = "✅ Usuario registrado correctamente. <a href='loginus.php'>Iniciar sesión</a>";
         } else {
-            if ($conn->errno === 1062) {
-                echo "⚠️ El correo ya está registrado.";
+            if ($conexion->errno === 1062) {
+                $mensaje = "⚠️ El correo ya está registrado.";
             } else {
-                echo "❌ Error al registrar el usuario: " . $conn->error;
+                $mensaje = "❌ Error al registrar el usuario: " . $conexion->error;
             }
         }
-
         $stmt->close();
     }
 }
 
-$conn->close();
+$conexion->close();
 ?>
 
-<!-- Formulario HTML -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Registro de Usuario</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; }
+        .register-card {
+            max-width: 400px;
+            margin: 80px auto;
+            padding: 2rem;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+    <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <h2>Registrar nuevo usuario</h2>
+
+<div class="register-card">
+    <h3 class="text-center mb-4">Registrar nuevo usuario</h3>
+
+    <?php if (!empty($mensaje)): ?>
+        <div class="alert alert-info"><?php echo $mensaje; ?></div>
+    <?php endif; ?>
+
     <form method="POST" action="">
-        <label>Nombre de usuario:</label><br>
-        <input type="text" name="nombre_usuario" required><br><br>
+        <div class="mb-3">
+            <label for="nombre_usuario" class="form-label">Nombre de usuario</label>
+            <input type="text" class="form-control" id="nombre_usuario" name="nombre_usuario" required>
+        </div>
 
-        <label>Correo electrónico:</label><br>
-        <input type="email" name="correo" required><br><br>
+        <div class="mb-3">
+            <label for="correo" class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="correo" name="correo" required>
+        </div>
 
-        <label>Contraseña:</label><br>
-        <input type="password" name="contrasena" required><br><br>
+        <div class="mb-3">
+            <label for="contrasena" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="contrasena" name="contrasena" required>
+        </div>
 
-        <button type="submit">Registrar</button>
+        <button type="submit" class="btn btn-success w-100">Registrar</button>
     </form>
+
+    <p class="mt-3 text-center">
+        ¿Ya tienes cuenta? <a href="loginus.php">Iniciar sesión</a>
+    </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
