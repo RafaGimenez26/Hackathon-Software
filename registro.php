@@ -13,38 +13,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 1. CONFIGURACIÓN DE LA BASE DE DATOS
     // ------------------------------------
-    $host = 'localhost'; 
-    $db = 'MercadoAgricolaLocal'; 
-    $user = 'root'; // <-- ¡VERIFICA TUS CREDENCIALES!
-    $pass = ''; // <-- ¡VERIFICA TUS CREDENCIALES!
-    $charset = 'utf8mb4';
-
-    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-
-    try {
-        $pdo = new PDO($dsn, $user, $pass, $options);
-    } catch (\PDOException $e) {
-        $error = "Error de conexión a la base de datos: " . $e->getMessage();
-    }
+    session_start();
+    require 'conexion.php';
 
     if (empty($error)) {
         // 2. RECIBIR Y SANITIZAR DATOS
         // ----------------------------
         $nombre_razon_social = trim($_POST['nombre_razon_social'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? ''; // [NUEVO: CONTRASEÑA]
+        $password = $_POST['password'] ?? '';
         $telefono = trim($_POST['telefono'] ?? '');
         $cuit_cuil = trim($_POST['cuit_cuil'] ?? '');
         $direccion_establecimiento = trim($_POST['direccion_establecimiento'] ?? '');
         $tipo_produccion_txt = trim($_POST['tipo_produccion'] ?? '');
-        $certificaciones = trim($_POST['certificaciones'] ?? '');
-        $tamano_hectareas = filter_var($_POST['tamano_hectareas'] ?? 0, FILTER_VALIDATE_FLOAT);
-        $rango_empleados = trim($_POST['rango_empleados'] ?? '');
         $horario_desde = trim($_POST['horario_desde'] ?? '00:00:00');
         $horario_hasta = trim($_POST['horario_hasta'] ?? '00:00:00');
         $descripcion_produccion = trim($_POST['descripcion_produccion'] ?? '');
@@ -57,98 +38,143 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // 3. VALIDACIÓN BÁSICA
         if (empty($nombre_razon_social) || empty($email) || empty($password) || empty($tipo_produccion_txt)) {
             $error = "Error: Faltan campos obligatorios (Nombre, Email, Contraseña, Tipo de Producción).";
-        } else if (strlen($password) < 6) { // Validación de longitud mínima
+        } else if (strlen($password) < 6) {
             $error = "Error: La contraseña debe tener al menos 6 caracteres.";
         }
 
         if (empty($error)) {
-            // [NUEVO: CONTRASEÑA] Generar el hash de la contraseña de forma segura
+            // Generar el hash de la contraseña de forma segura
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
             
-            // 4. INSERCIÓN EN LA BASE DE DATOS USANDO TRANSACCIONES
-            try {
-                $pdo->beginTransaction();
+            // 4. INSERCIÓN EN LA BASE DE DATOS USANDO TRANSACCIONES (MySQLi)
+            // Iniciar transacción
+            $conexion->begin_transaction();
 
-                // A. Buscar el ID del tipo de producción
-                $stmt_tipo = $pdo->prepare("SELECT TipoProduccionID FROM TiposProduccion WHERE NombreTipo = ?");
-                $stmt_tipo->execute([$tipo_produccion_txt]);
-                $tipo_produccion_obj = $stmt_tipo->fetch();
+            try {
+                // A. Buscar el ID del tipo de producción (TABLA EN MINÚSCULAS)
+                $stmt_tipo = $conexion->prepare("SELECT TipoProduccionID FROM tiposproduccion WHERE NombreTipo = ?");
+                $stmt_tipo->bind_param("s", $tipo_produccion_txt);
+                $stmt_tipo->execute();
+                $result_tipo = $stmt_tipo->get_result();
+                $tipo_produccion_obj = $result_tipo->fetch_assoc();
+                $stmt_tipo->close();
 
                 if (!$tipo_produccion_obj) {
                     throw new Exception("El tipo de producción seleccionado no es válido en el catálogo.");
                 }
                 $tipo_id = $tipo_produccion_obj['TipoProduccionID'];
 
-                // B. Insertar datos principales en 'Productores' (incluyendo PasswordHash)
-                $sql_productor = "INSERT INTO Productores (
+                // B. Insertar datos principales en 'productores' (TABLA EN MINÚSCULAS)
+                $sql_productor = "INSERT INTO productores (
                     NombreRazonSocial, CorreoElectronico, PasswordHash, TelefonoContacto, CUIT_CUIL, 
-                    DireccionEstablecimiento, TipoProduccionPrincipalID, Certificaciones, 
-                    TamanoHectareas, RangoEmpleados, HorarioAtencionDesde, 
+                    DireccionEstablecimiento, TipoProduccionPrincipalID, HorarioAtencionDesde, 
                     HorarioAtencionHasta, DescripcionProduccion
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // 13 Placeholders
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-                $stmt = $pdo->prepare($sql_productor);
-                $stmt->execute([
-                    $nombre_razon_social, $email, $password_hash, $telefono, $cuit_cuil, // Se agrega $password_hash
-                    $direccion_establecimiento, $tipo_id, $certificaciones,
-                    $tamano_hectareas, $rango_empleados, $horario_desde,
-                    $horario_hasta, $descripcion_produccion
-                ]);
+                $stmt = $conexion->prepare($sql_productor);
+                $stmt->bind_param(
+                    "ssssssisss",
+                    $nombre_razon_social, 
+                    $email, 
+                    $password_hash, 
+                    $telefono, 
+                    $cuit_cuil,
+                    $direccion_establecimiento, 
+                    $tipo_id, 
+                    $horario_desde,
+                    $horario_hasta, 
+                    $descripcion_produccion
+                );
+                $stmt->execute();
+                $productor_id = $conexion->insert_id;
+                $stmt->close();
 
-                $productor_id = $pdo->lastInsertId();
-
-                // C, D, E. Inserción de selecciones múltiples (Días, Zonas, Pagos)
-                // *Esta lógica es la misma y funciona correctamente, se mantiene.*
-                
-                // C. Días de Disponibilidad
+                // C. Días de Disponibilidad (TABLA EN MINÚSCULAS)
                 if (!empty($dias_disponibles)) {
+                    // Crear placeholders para la consulta IN
                     $placeholders = implode(',', array_fill(0, count($dias_disponibles), '?'));
-                    $stmt_ids = $pdo->prepare("SELECT DiaID FROM CatalogoDias WHERE NombreDia IN ($placeholders)");
-                    $stmt_ids->execute($dias_disponibles);
-                    $catalogo_ids = $stmt_ids->fetchAll(PDO::FETCH_COLUMN);
-                    $sql_insert = "INSERT INTO DiasDisponibilidad (ProductorID, DiaID) VALUES (:pid, :did)";
-                    $stmt_insert = $pdo->prepare($sql_insert);
-                    foreach ($catalogo_ids as $id) {
-                        $stmt_insert->execute([':pid' => $productor_id, ':did' => $id]);
+                    $types = str_repeat('s', count($dias_disponibles));
+                    
+                    $stmt_ids = $conexion->prepare("SELECT DiaID FROM catalogodias WHERE NombreDia IN ($placeholders)");
+                    $stmt_ids->bind_param($types, ...$dias_disponibles);
+                    $stmt_ids->execute();
+                    $result_ids = $stmt_ids->get_result();
+                    
+                    $catalogo_ids = [];
+                    while ($row = $result_ids->fetch_assoc()) {
+                        $catalogo_ids[] = $row['DiaID'];
                     }
+                    $stmt_ids->close();
+
+                    // Insertar relaciones
+                    $sql_insert = "INSERT INTO diasdisponibilidad (ProductorID, DiaID) VALUES (?, ?)";
+                    $stmt_insert = $conexion->prepare($sql_insert);
+                    foreach ($catalogo_ids as $id) {
+                        $stmt_insert->bind_param("ii", $productor_id, $id);
+                        $stmt_insert->execute();
+                    }
+                    $stmt_insert->close();
                 }
 
-                // D. Zonas de Distribución
+                // D. Zonas de Distribución (TABLA EN MINÚSCULAS)
                 if (!empty($zonas_venta)) {
                     $placeholders = implode(',', array_fill(0, count($zonas_venta), '?'));
-                    $stmt_ids = $pdo->prepare("SELECT ZonaID FROM CatalogoZonas WHERE NombreZona IN ($placeholders)");
-                    $stmt_ids->execute($zonas_venta);
-                    $catalogo_ids = $stmt_ids->fetchAll(PDO::FETCH_COLUMN);
-                    $sql_insert = "INSERT INTO ZonasDistribucion (ProductorID, ZonaID) VALUES (:pid, :zid)";
-                    $stmt_insert = $pdo->prepare($sql_insert);
-                    foreach ($catalogo_ids as $id) {
-                        $stmt_insert->execute([':pid' => $productor_id, ':zid' => $id]);
+                    $types = str_repeat('s', count($zonas_venta));
+                    
+                    $stmt_ids = $conexion->prepare("SELECT ZonaID FROM catalogozonas WHERE NombreZona IN ($placeholders)");
+                    $stmt_ids->bind_param($types, ...$zonas_venta);
+                    $stmt_ids->execute();
+                    $result_ids = $stmt_ids->get_result();
+                    
+                    $catalogo_ids = [];
+                    while ($row = $result_ids->fetch_assoc()) {
+                        $catalogo_ids[] = $row['ZonaID'];
                     }
+                    $stmt_ids->close();
+
+                    $sql_insert = "INSERT INTO zonasdistribucion (ProductorID, ZonaID) VALUES (?, ?)";
+                    $stmt_insert = $conexion->prepare($sql_insert);
+                    foreach ($catalogo_ids as $id) {
+                        $stmt_insert->bind_param("ii", $productor_id, $id);
+                        $stmt_insert->execute();
+                    }
+                    $stmt_insert->close();
                 }
 
-                // E. Métodos de Pago
+                // E. Métodos de Pago (TABLA EN MINÚSCULAS)
                 if (!empty($metodos_pago)) {
                     $placeholders = implode(',', array_fill(0, count($metodos_pago), '?'));
-                    $stmt_ids = $pdo->prepare("SELECT MetodoPagoID FROM CatalogoMetodosPago WHERE NombreMetodo IN ($placeholders)");
-                    $stmt_ids->execute($metodos_pago);
-                    $catalogo_ids = $stmt_ids->fetchAll(PDO::FETCH_COLUMN);
-                    $sql_insert = "INSERT INTO MetodosPagoAceptados (ProductorID, MetodoPagoID) VALUES (:pid, :mpid)";
-                    $stmt_insert = $pdo->prepare($sql_insert);
-                    foreach ($catalogo_ids as $id) {
-                        $stmt_insert->execute([':pid' => $productor_id, ':mpid' => $id]);
+                    $types = str_repeat('s', count($metodos_pago));
+                    
+                    $stmt_ids = $conexion->prepare("SELECT MetodoPagoID FROM catalogometodospago WHERE NombreMetodo IN ($placeholders)");
+                    $stmt_ids->bind_param($types, ...$metodos_pago);
+                    $stmt_ids->execute();
+                    $result_ids = $stmt_ids->get_result();
+                    
+                    $catalogo_ids = [];
+                    while ($row = $result_ids->fetch_assoc()) {
+                        $catalogo_ids[] = $row['MetodoPagoID'];
                     }
+                    $stmt_ids->close();
+
+                    $sql_insert = "INSERT INTO metodospagoaceptados (ProductorID, MetodoPagoID) VALUES (?, ?)";
+                    $stmt_insert = $conexion->prepare($sql_insert);
+                    foreach ($catalogo_ids as $id) {
+                        $stmt_insert->bind_param("ii", $productor_id, $id);
+                        $stmt_insert->execute();
+                    }
+                    $stmt_insert->close();
                 }
                 
                 // Si todo fue bien, confirmar la transacción
-                $pdo->commit();
+                $conexion->commit();
                 
                 // Éxito: Redirigir
                 header("Location: registro.php?estado=exito&id=" . $productor_id);
                 exit();
 
             } catch (Exception $e) {
-                $pdo->rollBack();
-                // En un entorno real, solo mostraríamos un mensaje genérico al usuario
+                $conexion->rollback();
                 $error = "Ocurrió un error al guardar los datos. Intente nuevamente. Detalles: " . $e->getMessage();
             }
         }
@@ -162,7 +188,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // Manejo de mensajes de estado (éxito/error)
 if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
     $mensaje_estado = '<div class="alert alert-success mt-4" role="alert">¡Registro exitoso! Ya eres parte de la comunidad. Ya puedes iniciar sesión.</div>';
-} elseif (!empty($error)) { // Si $error fue seteado en el bloque POST
+} elseif (!empty($error)) {
     $mensaje_estado = '<div class="alert alert-danger mt-4" role="alert">' . htmlspecialchars($error) . '</div>';
 }
 
@@ -242,24 +268,6 @@ if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
                 <option value="Productos lácteos">Productos lácteos</option>
                 <option value="Carnes y derivados">Carnes y derivados</option>
                 <option value="Producción mixta">Producción mixta</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">🏆 Certificaciones (Opcional)</label>
-              <input type="text" class="form-control" name="certificaciones" placeholder="Ej: Orgánico certificado, SENASA, etc.">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">📏 Tamaño del Establecimiento (Hectáreas)</label>
-              <input type="number" class="form-control" name="tamano_hectareas" placeholder="Ej: 2.5" step="0.1" min="0">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">👥 Cantidad de Empleados</label>
-              <select class="form-select" name="rango_empleados">
-                <option value="">Selecciona el rango</option>
-                <option value="1-3 personas">Solo yo/mi familia (1-3 personas)</option>
-                <option value="4-10 personas">Pequeño equipo (4-10 personas)</option>
-                <option value="11-25 personas">Mediano equipo (11-25 personas)</option>
-                <option value="Más de 25 personas">Más de 25 personas</option>
               </select>
             </div>
           </div>
