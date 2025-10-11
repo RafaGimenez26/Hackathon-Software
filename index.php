@@ -1,4 +1,5 @@
 <?php 
+session_start();
 // Incluir archivo de conexión (asumiendo que existe)
 require 'conexion.php';
 
@@ -147,7 +148,8 @@ function getCategoriaEmoji($categoria) {
             <a class="tab-btn active" href="index.php">🛒 Ver Productos</a>
             <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
             <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
-            <a class="tab-btn" href="loginus.php">🛍️ Mis Pedidos</a>
+            <a class="tab-btn" href="pedidos.php">🛍️ Mis Pedidos</a>
+            <a class="tab-btn" href="loginus.php">🛍️ Cliente</a>
         </div>
 
         <!-- CONTENIDO DE PRODUCTOS -->
@@ -425,6 +427,33 @@ function getCategoriaEmoji($categoria) {
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
+                // Funcionalidad de agregar al carrito
+        const botonesAgregar = document.querySelectorAll('.btn-agregar');
+        botonesAgregar.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productoId = this.dataset.productoId;
+                const input = document.querySelector(`input[data-producto-id="${productoId}"]`);
+                const cantidad = input.value;
+
+                fetch('carrito.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `producto_id=${productoId}&cantidad=${cantidad}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        this.innerHTML = '<i class="bi bi-check-lg"></i> Agregado';
+                        this.classList.add('btn-success');
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                })
+                .catch(() => alert("Error al agregar al carrito."));
+            });
+        });
+
         // Actualizar label del precio
         function updatePrecioLabel(value) {
             document.getElementById('precioLabel').textContent = 
