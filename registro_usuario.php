@@ -51,6 +51,13 @@ $conexion->close();
             background: #fff;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
     </style>
     <link href="style.css" rel="stylesheet">
 </head>
@@ -84,7 +91,8 @@ $conexion->close();
             <input type="password" class="form-control" id="contrasena" name="contrasena" required>
         </div>
 
-        <button type="submit" class="btn btn-success w-100">Registrar</button>
+        <button type="submit" class="btn btn-success w-100 mb-2">Registrar</button>
+        <a href="index.php" class="btn btn-secondary w-100">Volver al inicio</a>
     </form>
 
     <p class="mt-3 text-center">

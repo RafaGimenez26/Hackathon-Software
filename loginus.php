@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['nombre_usuario'] = $usuario['nombre_usuario'];
 
-                header("Location: bienvenida.php");
+                header("Location: pedidos.php");
                 exit();
             } else {
                 $mensaje = "❌ Contraseña incorrecta.";
