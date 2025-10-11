@@ -20,24 +20,12 @@ $email_previo = ''; // Para mantener el email si el login falla
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // 2.1. CONFIGURACIÓN DE LA BASE DE DATOS
+    // 2.1. INCLUIR ARCHIVO DE CONEXIÓN REMOTA
     // ------------------------------------
-    $host = 'localhost'; 
-    $db = 'MercadoAgricolaLocal'; 
-    $user = 'root';
-    $pass = '';
-    $charset = 'utf8mb4';
+    require_once 'conexion.php';
 
-    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-
-    try {
-        $pdo = new PDO($dsn, $user, $pass, $options);
-    } catch (\PDOException $e) {
+    // Verificar que la conexión MySQL esté disponible
+    if (!isset($conexion) || $conexion->connect_error) {
         $error_login = "Error del servidor: No se pudo conectar a la base de datos.";
     }
 
@@ -51,9 +39,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error_login = "Por favor, ingresa tu email y contraseña.";
         } else {
             try {
-                $stmt = $pdo->prepare("SELECT ProductorID, NombreRazonSocial, PasswordHash FROM Productores WHERE CorreoElectronico = ? AND Activo = 1");
-                $stmt->execute([$email]);
-                $productor = $stmt->fetch();
+                // Usar consulta preparada con MySQLi
+                $stmt = $conexion->prepare("SELECT ProductorID, NombreRazonSocial, PasswordHash FROM productores WHERE CorreoElectronico = ? AND Activo = 1");
+                
+                if (!$stmt) {
+                    throw new Exception("Error al preparar la consulta: " . $conexion->error);
+                }
+                
+                $stmt->bind_param("s", $email);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $productor = $result->fetch_assoc();
 
                 if ($productor && password_verify($password_ingresada, $productor['PasswordHash'])) {
                     
@@ -61,6 +57,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // IMPORTANTE: Usar ProductorID (con mayúscula) para consistencia
                     $_SESSION['ProductorID'] = $productor['ProductorID'];
                     $_SESSION['nombre_productor'] = $productor['NombreRazonSocial'];
+                    
+                    // Cerrar statement
+                    $stmt->close();
                     
                     // Redirigir a la página de carga de productos
                     header('Location: dashboard_productor.php'); 
@@ -70,8 +69,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $error_login = "Credenciales incorrectas. Verifica tu email y contraseña.";
                 }
 
-            } catch (\PDOException $e) {
+                $stmt->close();
+
+            } catch (Exception $e) {
                 $error_login = "Ocurrió un error al intentar iniciar sesión. Intenta más tarde.";
+                // Para debugging (comentar en producción):
+                // $error_login .= " - " . $e->getMessage();
             }
         }
     }
