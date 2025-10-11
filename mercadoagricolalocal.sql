@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 07-10-2025 a las 03:07:05
+-- Tiempo de generación: 11-10-2025 a las 21:19:33
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -172,6 +172,28 @@ INSERT INTO `tiposproduccion` (`TipoProduccionID`, `NombreTipo`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `nombre_usuario` varchar(50) NOT NULL,
+  `correo` varchar(100) NOT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `contrasena` varchar(255) NOT NULL,
+  `fecha_registro` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id`, `nombre_usuario`, `correo`, `telefono`, `contrasena`, `fecha_registro`) VALUES
+(1, 'Payes Martin', 'nicolaspayes2@gmail.com', '3764399836', '$2y$10$1rmUSn4tAF9HAxwmnyM8yOAffK..le1xO6JPK1.FvwHm/ZN/HHL6K', '2025-10-11 16:12:04');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `zonasdistribucion`
 --
 
@@ -236,6 +258,13 @@ ALTER TABLE `tiposproduccion`
   ADD UNIQUE KEY `NombreTipo` (`NombreTipo`);
 
 --
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `correo` (`correo`);
+
+--
 -- Indices de la tabla `zonasdistribucion`
 --
 ALTER TABLE `zonasdistribucion`
@@ -269,6 +298,12 @@ ALTER TABLE `productores`
 --
 ALTER TABLE `tiposproduccion`
   MODIFY `TipoProduccionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Restricciones para tablas volcadas
