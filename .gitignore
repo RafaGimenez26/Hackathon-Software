@@ -3,7 +3,7 @@ vendor/
 
 # Credenciales y configuración sensible
 .env
-
+conexion.php
 /old
 
 # Archivos de sistema
