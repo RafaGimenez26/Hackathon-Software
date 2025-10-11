@@ -11,7 +11,7 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // 2. Obtener las credenciales desde las variables de entorno
-$host = $_ENV['host'] ?? 'localhost';
+$host = $_ENV['host'] ?? 'sql10802401';
 $usuario = $_ENV['user'] ?? 'root';
 $password = $_ENV['pass'] ?? '';
 $base_de_datos = $_ENV['dbname'] ?? 'MercadoAgricolaLocal';
