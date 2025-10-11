@@ -8,15 +8,16 @@ $mensaje = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nombre_usuario = trim($_POST['nombre_usuario']);
     $correo = trim($_POST['correo']);
+    $telefono = trim($_POST['telefono']);
     $contrasena = trim($_POST['contrasena']);
 
-    if (empty($nombre_usuario) || empty($correo) || empty($contrasena)) {
+    if (empty($nombre_usuario) || empty($correo) || empty($telefono) || empty($contrasena)) {
         $mensaje = "Por favor, complete todos los campos.";
     } else {
         $hash = password_hash($contrasena, PASSWORD_DEFAULT);
 
-        $stmt = $conexion->prepare("INSERT INTO usuarios (nombre_usuario, correo, contrasena) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $nombre_usuario, $correo, $hash);
+        $stmt = $conexion->prepare("INSERT INTO usuarios (nombre_usuario, correo, telefono, contrasena) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $nombre_usuario, $correo, $telefono, $hash);
 
         if ($stmt->execute()) {
             $mensaje = "✅ Usuario registrado correctamente. <a href='loginus.php'>Iniciar sesión</a>";
@@ -71,6 +72,11 @@ $conexion->close();
         <div class="mb-3">
             <label for="correo" class="form-label">Correo electrónico</label>
             <input type="email" class="form-control" id="correo" name="correo" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="telefono" class="form-label">Número de teléfono</label>
+            <input type="tel" class="form-control" id="telefono" name="telefono" required pattern="[0-9]{6,15}" title="Ingrese solo números (entre 6 y 15 dígitos)">
         </div>
 
         <div class="mb-3">
