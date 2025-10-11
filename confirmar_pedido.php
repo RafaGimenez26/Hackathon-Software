@@ -10,6 +10,7 @@ if (!isset($_SESSION['usuario_id'])) {
 $usuario_id = $_SESSION['usuario_id'];
 $carritosCollection = $database->Carritos;
 $pedidosCollection = $database->Pedidos;
+$productosCollection = $database->Productos;
 
 // Obtener carrito del usuario
 $carrito = $carritosCollection->findOne(['usuario_id' => $usuario_id]);
@@ -27,13 +28,32 @@ if (!$carrito || empty($carrito['items'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_pedido'])) {
 
     $total = 0;
+    $itemsConProductor = [];
+    
+    // Enriquecer cada item con el productor_id desde la colección Productos
     foreach ($carrito['items'] as $item) {
         $total += $item['precio_unitario'] * $item['cantidad'];
+        
+        // Buscar el producto para obtener el productor_id
+        $producto = $productosCollection->findOne(['_id' => new MongoDB\BSON\ObjectId($item['producto_id'])]);
+        
+        // Agregar productor_id al item
+        $itemEnriquecido = [
+            'producto_id' => $item['producto_id'],
+            'nombre' => $item['nombre'],
+            'precio_unitario' => $item['precio_unitario'],
+            'cantidad' => $item['cantidad'],
+            'unidad' => $item['unidad'] ?? 'u',
+            'productor_id' => $producto['productor_id'] ?? null, // ID del productor
+            'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido' // Opcional: nombre del productor
+        ];
+        
+        $itemsConProductor[] = $itemEnriquecido;
     }
 
     $nuevoPedido = [
         'usuario_id' => $usuario_id,
-        'items' => $carrito['items'],
+        'items' => $itemsConProductor, // Items con productor_id incluido
         'total' => $total,
         'estado' => 'en_proceso',
         'fecha_creacion' => new MongoDB\BSON\UTCDateTime(),
