@@ -356,8 +356,8 @@ function crearGraficoProductosMasVendidos(datos) {
     const cantidades = datos.map(d => d.cantidad);
     
     const colores = [
-        '#198754', '#20c997', '#0dcaf0', '#0d6efd', '#6610f2',
-        '#d63384', '#dc3545', '#fd7e14', '#ffc107', '#28a745'
+        '#198754', '#20c997', '#0dcaf0', '#0d6efd', 
+        '#28a745'
     ];
     
     if (productosChart) productosChart.destroy();
