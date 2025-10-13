@@ -149,7 +149,7 @@ function getCategoriaEmoji($categoria) {
             <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
             <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
             <a class="tab-btn" href="pedidos.php">🛍️ Mis Pedidos</a>
-            <a class="tab-btn" href="loginus.php">🛍️ Cliente</a>
+            <a class="tab-btn" href="loginus.php">👤 Sector Clientes</a>
         </div>
 
         <!-- CONTENIDO DE PRODUCTOS -->

@@ -198,7 +198,7 @@ if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mercado Agrícola Local - Registrarse como Productor</title>
+  <title>AgroHub Misiones - Registrarse como Productor</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
@@ -206,7 +206,7 @@ if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
 <body>
   <div class="container-custom">
     <div class="header">
-      <h1>🌾 Mercado Agrícola Local</h1>
+      <h1>🌾 AgroHub Misiones</h1>
       <p>Conectando productores locales con la comunidad Misionera</p>
     </div>
 
@@ -214,7 +214,7 @@ if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
       <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
       <a class="tab-btn active" href="registro.php">👨‍🌾 Registrarse como Productor</a>
       <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
-      <a class="tab-btn" href="mispedidos.php">🛍️ Mis Pedidos</a>
+      <!-- <a class="tab-btn" href="mispedidos.php">🛍️ Mis Pedidos</a> -->
     </div>
 
     <?php echo $mensaje_estado; ?>

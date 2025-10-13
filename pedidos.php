@@ -52,8 +52,8 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
 
         <div class="nav-tabs-custom">
             <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
-            <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
-            <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
+            <!-- <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
+            <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a> -->
             <a class="tab-btn active" href="pedidos.php">🛍️ Carrito y Pedidos</a>
         </div>
 
