@@ -225,10 +225,6 @@ function getCategoriaEmoji($categoria) {
                         <span class="text-muted ms-2">(Página <?= $pagina_actual ?> de <?= $total_paginas ?>)</span>
                     <?php endif; ?>
                 </div>
-                <!-- <div class="view-toggle">
-                    <button class="view-btn active">🔲 Grilla</button>
-                    <button class="view-btn">📋 Lista</button>
-                </div> -->
             </div>
 
             <!-- GRID DE PRODUCTOS -->
