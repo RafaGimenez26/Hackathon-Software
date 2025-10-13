@@ -10,6 +10,7 @@ if (!isset($_SESSION['ProductorID'])) {
 
 // Obtener ID del productor logueado
 $productor_id = $_SESSION['ProductorID'];
+$nombre_productor = $_SESSION['nombre_productor'];
 
 // === ACTUALIZAR STOCK (llamado AJAX) ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_stock'])) {
@@ -169,8 +170,10 @@ try {
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 text-success">🌿 Panel del Productor</h1>
+        <p class="text-muted mb-0">Bienvenido, <?= htmlspecialchars($nombre_productor) ?></p>
         <div>
             <a href="cargar_producto.php" class="btn btn-success">➕ Cargar Nuevo Producto</a>
+            <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
             <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
         </div>
     </div>
