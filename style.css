@@ -1,4 +1,4 @@
-    * {
+* {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -194,7 +194,7 @@
             margin-top: 15px;
         }
 
-        /* Animación sutil para llamar la atención */
+        /* AnimaciÃ³n sutil para llamar la atenciÃ³n */
         .recycle-card:hover {
             transform: translateY(-8px) scale(1.02);
             box-shadow: 0 12px 35px rgba(76, 175, 80, 0.3);
@@ -257,7 +257,7 @@
             box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
         }
 
-        /* Productos Grid - Más pequeño */
+        /* Productos Grid - MÃ¡s pequeÃ±o */
         .productos-header {
             display: flex;
             justify-content: space-between;
@@ -292,7 +292,9 @@
             color: white;
         }
 
-        /* Producto Card - Más compacto */
+        
+
+        /* Producto Card - MÃ¡s compacto */
         .producto-card {
             background: white;
             border-radius: 16px;
@@ -518,7 +520,7 @@
             font-size: 0.8rem;
         }
 
-        /* Estados vacíos */
+        /* Estados vacÃ­os */
         .empty-state {
             text-align: center;
             padding: 60px 20px;

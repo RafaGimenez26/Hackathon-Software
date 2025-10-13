@@ -46,6 +46,24 @@ $opciones = [
 
 $productos = $collection->find($query, $opciones)->toArray();
 
+// Obtener información de productores para los productos actuales
+$productores_cache = [];
+if (!empty($productos)) {
+    $productores_ids = array_unique(array_column(iterator_to_array($productos), 'productor_id'));
+    $placeholders = implode(',', array_fill(0, count($productores_ids), '?'));
+    $types = str_repeat('i', count($productores_ids));
+    
+    $stmt = $conexion->prepare("SELECT ProductorID, NombreRazonSocial, TelefonoContacto, CorreoElectronico FROM productores WHERE ProductorID IN ($placeholders)");
+    $stmt->bind_param($types, ...$productores_ids);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($productor = $result->fetch_assoc()) {
+        $productores_cache[$productor['ProductorID']] = $productor;
+    }
+    $stmt->close();
+}
+
 // Mapeo de categorías y zonas para los filtros
 $categorias_map = [
     'verduras' => 'Verduras de hoja',
@@ -135,7 +153,185 @@ function getCategoriaEmoji($categoria) {
     <!-- Bootstrap Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
-    <!-- <link href="script.js" rel="script"> -->
+    <style>
+        /* ========================================
+           ESTILOS ESPECÍFICOS SOLO PARA INDEX.PHP
+           ======================================== */
+        
+        /* Asegurar que las columnas del grid tengan la misma altura */
+        #productos-grid .row.g-3 > [class*='col-'] {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        /* Tarjetas con altura fija SOLO en index */
+        #productos-grid .producto-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 680px;
+            max-height: 680px;
+        }
+
+        #productos-grid .producto-card .product-image-placeholder {
+            height: 180px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* Badge del productor con altura fija */
+        #productos-grid .productor-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+            min-height: 40px;
+            flex-shrink: 0;
+        }
+        
+        #productos-grid .productor-badge i {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        
+        #productos-grid .productor-nombre {
+            font-weight: 600;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        #productos-grid .productor-contacto {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        /* Título del producto con altura controlada */
+        #productos-grid .producto-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.3;
+            min-height: 2.6em;
+            max-height: 2.6em;
+        }
+
+        /* Descripción con altura controlada */
+        #productos-grid .product-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 8px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.4;
+            min-height: 2.8em;
+            max-height: 2.8em;
+            flex-shrink: 0;
+        }
+
+        /* Información del productor compacta */
+        #productos-grid .productor-info {
+            margin: 8px 0;
+            flex-shrink: 0;
+        }
+
+        #productos-grid .productor-info .ubicacion {
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #productos-grid .productor-info .ubicacion i {
+            flex-shrink: 0;
+        }
+
+        /* Disponibilidad y stock compactos */
+        #productos-grid .disponibilidad {
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            margin: 8px 0;
+            flex-shrink: 0;
+        }
+
+        #productos-grid .stock-info {
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        /* Selector de cantidad al final */
+        #productos-grid .cantidad-selector {
+            margin-top: auto;
+            flex-shrink: 0;
+            padding-top: 10px;
+        }
+
+        /* Badges más compactos */
+        #productos-grid .producto-tipo,
+        #productos-grid .badge {
+            font-size: 0.75rem;
+        }
+
+        #productos-grid .precio {
+            font-size: 1.25rem;
+        }
+
+        /* Responsive para tarjetas uniformes */
+        @media (max-width: 1200px) {
+            #productos-grid .producto-card {
+                min-height: 720px;
+                max-height: 720px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            #productos-grid .producto-card {
+                min-height: 700px;
+                max-height: 700px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #productos-grid .producto-card {
+                min-height: 650px;
+                max-height: 650px;
+            }
+
+            #productos-grid .product-image-placeholder {
+                height: 160px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            #productos-grid .producto-card {
+                min-height: auto;
+                max-height: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container-custom">
@@ -225,14 +421,10 @@ function getCategoriaEmoji($categoria) {
                         <span class="text-muted ms-2">(Página <?= $pagina_actual ?> de <?= $total_paginas ?>)</span>
                     <?php endif; ?>
                 </div>
-                <!-- <div class="view-toggle">
-                    <button class="view-btn active">🔲 Grilla</button>
-                    <button class="view-btn">📋 Lista</button>
-                </div> -->
             </div>
 
             <!-- GRID DE PRODUCTOS -->
-            <div class="row g-3">
+            <div class="row g-3" id="productos-grid">
                 
                 <!-- Contenedor Estático de Reciclaje - Siempre Primero -->
                 <?php if ($pagina_actual === 1): ?>
@@ -286,12 +478,29 @@ function getCategoriaEmoji($categoria) {
                     </div>
                 <?php else: ?>
                     <?php foreach ($productos as $producto): ?>
+                    <?php 
+                        $productor = $productores_cache[$producto['productor_id']] ?? null;
+                    ?>
                     <div class="col-xl-3 col-lg-4 col-md-6">
                         <div class="producto-card">
                             <img src="<?= htmlspecialchars($producto['imagen'] ?? 'img/default.jpg') ?>" 
                                  alt="<?= htmlspecialchars($producto['nombre']) ?>" 
                                  class="product-image-placeholder" 
                                  onerror="this.src='img/default.jpg'" />
+
+                            <!-- INFORMACIÓN DEL PRODUCTOR -->
+                            <?php if ($productor): ?>
+                            <div class="productor-badge">
+                                <i class="bi bi-person-badge"></i>
+                                <span class="productor-nombre"><?= htmlspecialchars($productor['NombreRazonSocial']) ?></span>
+                                <?php if (!empty($productor['TelefonoContacto'])): ?>
+                                <div class="productor-contacto">
+                                    <i class="bi bi-telephone"></i>
+                                    <?= htmlspecialchars($productor['TelefonoContacto']) ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
 
                             <div class="producto-header">
                                 <div>
@@ -427,7 +636,7 @@ function getCategoriaEmoji($categoria) {
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-                // Funcionalidad de agregar al carrito
+        // Funcionalidad de agregar al carrito
         const botonesAgregar = document.querySelectorAll('.btn-agregar');
         botonesAgregar.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -471,34 +680,6 @@ function getCategoriaEmoji($categoria) {
             productCards.forEach(card => {
                 card.addEventListener('mouseenter', () => card.style.transform = 'translateY(-5px)');
                 card.addEventListener('mouseleave', () => card.style.transform = 'translateY(0)');
-            });
-
-            // Funcionalidad de agregar al carrito (ejemplo básico)
-            const botonesAgregar = document.querySelectorAll('.btn-agregar');
-            botonesAgregar.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const productoId = this.dataset.productoId;
-                    const nombre = this.dataset.nombre;
-                    const precio = this.dataset.precio;
-                    const input = document.querySelector(`input[data-producto-id="${productoId}"]`);
-                    const cantidad = input.value;
-
-                    // Aquí puedes agregar la lógica para guardar en el carrito
-                    // Por ahora solo mostramos un mensaje
-                    alert(`Agregado al carrito:\n${nombre}\nCantidad: ${cantidad}\nPrecio: $${precio}`);
-                    
-                    // Opcional: Cambiar el botón temporalmente
-                    const iconoOriginal = this.innerHTML;
-                    this.innerHTML = '<i class="bi bi-check-lg"></i> Agregado';
-                    this.classList.add('btn-success');
-                    this.classList.remove('btn-primary-custom');
-                    
-                    setTimeout(() => {
-                        this.innerHTML = iconoOriginal;
-                        this.classList.remove('btn-success');
-                        this.classList.add('btn-primary-custom');
-                    }, 2000);
-                });
             });
         });
     </script>
