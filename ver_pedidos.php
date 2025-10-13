@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['accion'])) {
                 foreach ($pedido['items'] as $item) {
                     if ($item['productor_id'] == $productor_id) {
                         $productosCollection->updateOne(
-                            ['_id' => new MongoDB\BSON\ObjectId($item['producto_id']['$oid'])],
+                            ['_id' => $item['producto_id']],
                             ['$inc' => ['stock_disponible' => -$item['cantidad']]]
                         );
                     }
