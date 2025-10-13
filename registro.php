@@ -214,7 +214,7 @@ if (isset($_GET['estado']) && $_GET['estado'] == 'exito') {
       <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
       <a class="tab-btn active" href="registro.php">👨‍🌾 Registrarse como Productor</a>
       <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
-      <!-- <a class="tab-btn" href="mispedidos.php">🛍️ Mis Pedidos</a> -->
+      <a class="tab-btn" href="loginus.php">👤 Sector Clientes</a>
     </div>
 
     <?php echo $mensaje_estado; ?>

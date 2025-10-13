@@ -100,8 +100,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="nav-tabs-custom">
       <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
       <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
-      <a class="tab-btn active" href="misproductos.php">📦 Acceso Productor</a>
-      <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a>
+      <a class="tab-btn active" href="misproductos.php">📦 Mis Productos</a>
+      <a class="tab-btn" href="loginus.php">👤 Sector Clientes</a>
+      <!-- <a class="tab-btn" href="registro_usuario.php">🛍️ Mis Pedidos</a> -->
     </div>
 
     <div class="tab-content active">

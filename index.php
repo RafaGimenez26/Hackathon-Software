@@ -175,7 +175,7 @@ function getCategoriaEmoji($categoria) {
                         </div>
                         <div class="col-md-3">
                             <div class="filter-group">
-                                <label class="form-label">📍 Zona de Posadas</label>
+                                <label class="form-label">📍 Feria/Zona de Posadas</label>
                                 <select class="form-select" name="zona" onchange="this.form.submit()">
                                     <option value="todas">Todas las zonas</option>
                                     <?php foreach ($zonas_map as $key => $value): ?>
