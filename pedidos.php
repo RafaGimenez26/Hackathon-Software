@@ -34,10 +34,26 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛍️ Mis Pedidos - AgroHub Misiones</title>
+    <title>🛒️ Mis Pedidos - AgroHub Misiones</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
+    <style>
+        .item-estado-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .producto-item {
+            transition: all 0.3s ease;
+        }
+        .producto-item:hover {
+            background-color: #f8f9fa;
+        }
+        .estado-icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container-custom">
@@ -52,21 +68,15 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
 
         <div class="nav-tabs-custom">
             <a class="tab-btn" href="index.php">🛒 Ver Productos</a>
-            <!-- <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
-            <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a> -->
-            <a class="tab-btn active" href="pedidos.php">🛍️ Carrito y Pedidos</a>
+            <a class="tab-btn active" href="pedidos.php">🛒️ Carrito y Pedidos</a>
         </div>
 
-        <!-- MENSAJE DE CONFIRMACIÓN -->
         <?= $mensaje ?>
 
-        <!-- CONTENIDO DE MIS PEDIDOS -->
         <div>
             <h2 class="tab-title">Mi Carrito y Pedidos</h2>
             
-            <!-- ============================================ -->
             <!-- CARRITO DE COMPRAS ACTUAL -->
-            <!-- ============================================ -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
@@ -84,7 +94,6 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                             </a>
                         </div>
                     <?php else: ?>
-                        <!-- Items del carrito -->
                         <?php foreach ($carrito['items'] as $item): ?>
                             <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-3">
                                 <div class="d-flex align-items-center flex-grow-1">
@@ -118,7 +127,6 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                             </div>
                         <?php endforeach; ?>
 
-                        <!-- Total y acciones -->
                         <div class="card bg-success text-white mt-4">
                             <div class="card-body text-center">
                                 <h4 class="mb-2">Total: $<?= number_format($total, 0, ',', '.') ?></h4>
@@ -129,7 +137,6 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                                     <button class="btn btn-light me-2" id="btnVaciarCarrito">
                                         <i class="bi bi-trash3"></i> Vaciar Carrito
                                     </button>
-                                    <!-- Botón que lleva a confirmar_pedido.php -->
                                     <a href="confirmar_pedido.php" class="btn btn-warning btn-lg">
                                         <i class="bi bi-check-circle"></i> Confirmar Pedido
                                     </a>
@@ -140,9 +147,7 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                 </div>
             </div>
 
-            <!-- ============================================ -->
             <!-- HISTORIAL DE PEDIDOS -->
-            <!-- ============================================ -->
             <div class="card">
                 <div class="card-header bg-light">
                     <h4 class="mb-0">
@@ -159,7 +164,6 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                     <?php else: ?>
                         <?php foreach ($pedidos as $pedido): ?>
                             <?php
-                            // Calcular total del pedido
                             $totalPedido = isset($pedido['total']) ? $pedido['total'] : 0;
                             if ($totalPedido == 0) {
                                 foreach ($pedido['items'] as $item) {
@@ -167,20 +171,20 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                                 }
                             }
                             
-                            // Definir color del badge según estado
-                            $estadoBadge = [
-                                'pendiente' => 'bg-warning text-dark',
-                                'confirmado' => 'bg-info',
-                                'en_proceso' => 'bg-primary',
-                                'en_preparacion' => 'bg-primary',
-                                'listo' => 'bg-success',
-                                'entregado' => 'bg-success',
-                                'cancelado' => 'bg-danger'
-                            ];
-                            $badgeClass = $estadoBadge[$pedido['estado']] ?? 'bg-secondary';
-                            
-                            // Formatear fecha
                             $fecha = $pedido['fecha_creacion']->toDateTime()->format('d/m/Y H:i');
+                            
+                            // Agrupar items por productor
+                            $itemsPorProductor = [];
+                            foreach ($pedido['items'] as $item) {
+                                $prodId = $item['productor_id'] ?? 'sin_productor';
+                                if (!isset($itemsPorProductor[$prodId])) {
+                                    $itemsPorProductor[$prodId] = [
+                                        'nombre' => $item['productor_nombre'] ?? 'Productor desconocido',
+                                        'items' => []
+                                    ];
+                                }
+                                $itemsPorProductor[$prodId]['items'][] = $item;
+                            }
                             ?>
                             <div class="card mb-3">
                                 <div class="card-body">
@@ -193,26 +197,72 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                                                 <i class="bi bi-calendar"></i> <?= $fecha ?>
                                             </small>
                                         </div>
-                                        <span class="badge <?= $badgeClass ?> fs-6">
-                                            <?= ucfirst(str_replace('_', ' ', $pedido['estado'])) ?>
+                                        <span class="badge bg-info fs-6">
+                                            <?= count($pedido['items']) ?> productos
                                         </span>
                                     </div>
-                                    <div class="row">
+                                    
+                                    <!-- Productos agrupados por productor -->
+                                    <?php foreach ($itemsPorProductor as $prodId => $prodData): ?>
+                                        <div class="mb-3 p-3 border rounded">
+                                            <h6 class="mb-2">
+                                                <i class="bi bi-person-badge"></i> 
+                                                <?= htmlspecialchars($prodData['nombre']) ?>
+                                            </h6>
+                                            
+                                            <?php foreach ($prodData['items'] as $item): ?>
+                                                <?php 
+                                                $estadoItem = $item['estado'] ?? 'pendiente';
+                                                $estadoInfo = getEstadoItemBadge($estadoItem);
+                                                ?>
+                                                <div class="producto-item d-flex justify-content-between align-items-center py-2 px-3 mb-2 border-start border-3 <?= $estadoInfo['class'] === 'bg-success' ? 'border-success' : ($estadoInfo['class'] === 'bg-danger' ? 'border-danger' : 'border-warning') ?>">
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="bi bi-<?= $estadoInfo['icon'] ?> estado-icon"></i>
+                                                            <div>
+                                                                <strong><?= htmlspecialchars($item['nombre']) ?></strong>
+                                                                <small class="d-block text-muted">
+                                                                    <?= $item['cantidad'] ?> <?= htmlspecialchars($item['unidad'] ?? 'u') ?> 
+                                                                    × $<?= number_format($item['precio_unitario'], 0, ',', '.') ?>
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="mb-1">
+                                                            <strong>$<?= number_format($item['precio_unitario'] * $item['cantidad'], 0, ',', '.') ?></strong>
+                                                        </div>
+                                                        <span class="badge <?= $estadoInfo['class'] ?> item-estado-badge">
+                                                            <?= $estadoInfo['texto'] ?>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    
+                                    <div class="row mt-3 pt-3 border-top">
                                         <div class="col-md-8">
-                                            <p class="mb-1"><strong>Productos:</strong></p>
-                                            <ul class="list-unstyled mb-0">
-                                                <?php foreach ($pedido['items'] as $item): ?>
-                                                    <li class="mb-1">
-                                                        • <?= htmlspecialchars($item['nombre']) ?> 
-                                                        (<?= $item['cantidad'] ?> <?= htmlspecialchars($item['unidad'] ?? 'u') ?>) 
-                                                        - $<?= number_format($item['precio_unitario'] * $item['cantidad'], 0, ',', '.') ?>
-                                                    </li>
+                                            <?php
+                                            $estadosContador = [];
+                                            foreach ($pedido['items'] as $item) {
+                                                $est = $item['estado'] ?? 'pendiente';
+                                                $estadosContador[$est] = ($estadosContador[$est] ?? 0) + 1;
+                                            }
+                                            ?>
+                                            <small class="text-muted">
+                                                <strong>Resumen:</strong>
+                                                <?php foreach ($estadosContador as $estado => $count): ?>
+                                                    <?php $info = getEstadoItemBadge($estado); ?>
+                                                    <span class="badge <?= $info['class'] ?> ms-1">
+                                                        <?= $count ?> <?= $info['texto'] ?>
+                                                    </span>
                                                 <?php endforeach; ?>
-                                            </ul>
+                                            </small>
                                         </div>
                                         <div class="col-md-4 text-end">
                                             <p class="h5 text-success mb-2">
-                                                $<?= number_format($totalPedido, 0, ',', '.') ?>
+                                                Total: $<?= number_format($totalPedido, 0, ',', '.') ?>
                                             </p>
                                             <button class="btn btn-sm btn-outline-primary btn-ver-detalle"
                                                     data-bs-toggle="modal"
@@ -220,12 +270,11 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
                                                     data-pedido='<?= json_encode([
                                                         'id' => substr((string)$pedido['_id'], -8),
                                                         'fecha' => $fecha,
-                                                        'estado' => ucfirst(str_replace('_', ' ', $pedido['estado'])),
-                                                        'badge' => $badgeClass,
-                                                        'items' => $pedido['items'],
-                                                        'total' => $totalPedido
-                                                    ]) ?>'>
-                                                <i class="bi bi-eye"></i> Ver detalles
+                                                        'items' => iterator_to_array($pedido['items']),
+                                                        'total' => $totalPedido,
+                                                        'itemsPorProductor' => $itemsPorProductor
+                                                    ], JSON_HEX_APOS | JSON_HEX_QUOT) ?>'>
+                                                <i class="bi bi-eye"></i> Ver detalles completos
                                             </button>
                                         </div>
                                     </div>
@@ -257,16 +306,12 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ============================================
-        // ELIMINAR PRODUCTO DEL CARRITO
-        // ============================================
         document.querySelectorAll('.btn-eliminar').forEach(btn => {
             btn.addEventListener('click', function() {
                 const productoId = this.dataset.productoId;
                 const nombre = this.dataset.nombre;
                 
                 if (confirm(`¿Eliminar "${nombre}" del carrito?`)) {
-                    // Crear formulario temporal para enviar POST
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = 'eliminar_carrito.php';
@@ -283,12 +328,8 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
             });
         });
 
-        // ============================================
-        // VACIAR CARRITO COMPLETO
-        // ============================================
         document.getElementById('btnVaciarCarrito')?.addEventListener('click', function() {
             if (confirm('⚠️ ¿Estás seguro de vaciar todo el carrito?')) {
-                // Crear formulario para vaciar carrito
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = 'vaciar_carrito.php';
@@ -297,76 +338,99 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'pedido_confirmado') {
             }
         });
 
-        // ============================================
-        // VER DETALLE DE PEDIDO EN MODAL
-        // ============================================
         document.querySelectorAll('.btn-ver-detalle').forEach(btn => {
             btn.addEventListener('click', function() {
                 const pedido = JSON.parse(this.dataset.pedido);
                 const contenido = document.getElementById('modalContenido');
                 
-                let itemsHTML = '';
-                pedido.items.forEach(item => {
-                    const subtotal = item.precio_unitario * item.cantidad;
-                    itemsHTML += `
-                        <tr>
-                            <td><strong>${item.nombre}</strong></td>
-                            <td class="text-center">${item.cantidad} ${item.unidad || 'u'}</td>
-                            <td class="text-end">$${item.precio_unitario.toLocaleString('es-AR')}</td>
-                            <td class="text-end"><strong>$${subtotal.toLocaleString('es-AR')}</strong></td>
-                        </tr>
+                let productoresHTML = '';
+                for (const [prodId, prodData] of Object.entries(pedido.itemsPorProductor)) {
+                    let itemsHTML = '';
+                    prodData.items.forEach(item => {
+                        const subtotal = item.precio_unitario * item.cantidad;
+                        const estadoInfo = getEstadoBadgeJS(item.estado || 'pendiente');
+                        
+                        itemsHTML += `
+                            <tr>
+                                <td>
+                                    <strong>${item.nombre}</strong>
+                                    <br>
+                                    <span class="badge ${estadoInfo.class} item-estado-badge">
+                                        <i class="bi bi-${estadoInfo.icon}"></i> ${estadoInfo.texto}
+                                    </span>
+                                </td>
+                                <td class="text-center">${item.cantidad} ${item.unidad || 'u'}</td>
+                                <td class="text-end">$${item.precio_unitario.toLocaleString('es-AR')}</td>
+                                <td class="text-end"><strong>$${subtotal.toLocaleString('es-AR')}</strong></td>
+                            </tr>
+                        `;
+                    });
+                    
+                    productoresHTML += `
+                        <div class="mb-4">
+                            <h6 class="bg-light p-2 rounded">
+                                <i class="bi bi-person-badge"></i> ${prodData.nombre}
+                            </h6>
+                            <table class="table table-hover table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHTML}
+                                </tbody>
+                            </table>
+                        </div>
                     `;
-                });
+                }
                 
                 contenido.innerHTML = `
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <p><strong>Pedido ID:</strong> #${pedido.id}</p>
                             <p><strong>Fecha:</strong> ${pedido.fecha}</p>
                         </div>
-                        <div class="col-md-6 text-end">
-                            <span class="badge ${pedido.badge} fs-6">${pedido.estado}</span>
-                        </div>
                     </div>
                     
                     <hr>
                     
-                    <h6 class="mb-3">Productos del Pedido:</h6>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Producto</th>
-                                    <th class="text-center">Cantidad</th>
-                                    <th class="text-end">Precio Unit.</th>
-                                    <th class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsHTML}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
-                                    <td class="text-end">
-                                        <h5 class="text-success mb-0">$${pedido.total.toLocaleString('es-AR')}</h5>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <h6 class="mb-3">Productos del Pedido por Productor:</h6>
+                    ${productoresHTML}
                     
                     <hr>
                     
-                    <div class="alert alert-info">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                        <h5 class="mb-0">TOTAL DEL PEDIDO:</h5>
+                        <h4 class="text-success mb-0">${pedido.total.toLocaleString('es-AR')}</h4>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle"></i>
                         <strong>Información importante:</strong><br>
-                        Los productores han sido notificados de tu pedido. 
-                        Te contactarán para coordinar la entrega o retiro.
+                        Cada productor gestiona el estado de sus productos de forma independiente. 
+                        Te contactarán para coordinar la entrega o retiro de sus productos.
                     </div>
                 `;
             });
         });
+        
+        // Función auxiliar para obtener info de estado en JavaScript
+        function getEstadoBadgeJS(estado) {
+            const estados = {
+                'pendiente': {class: 'bg-warning text-dark', icon: 'clock-history', texto: 'Pendiente'},
+                'confirmado': {class: 'bg-info', icon: 'check-circle', texto: 'Confirmado'},
+                'en_preparacion': {class: 'bg-primary', icon: 'box-seam', texto: 'En preparación'},
+                'listo': {class: 'bg-success', icon: 'check-all', texto: 'Listo para entregar'},
+                'entregado': {class: 'bg-success', icon: 'bag-check', texto: 'Entregado'},
+                'no_entregado': {class: 'bg-danger', icon: 'x-circle', texto: 'No se pudo entregar'},
+                'cancelado': {class: 'bg-secondary', icon: 'x-circle', texto: 'Cancelado'}
+            };
+            return estados[estado] || {class: 'bg-secondary', icon: 'question-circle', texto: estado};
+        }
     </script>
 </body>
 </html>

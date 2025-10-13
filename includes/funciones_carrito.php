@@ -9,14 +9,13 @@ function obtenerCarritoUsuario($usuario_id) {
     global $database;
     $carritos = $database->Carritos;
     
-    // Convertir a entero para asegurar consistencia
     $usuario_id = (int)$usuario_id;
     
     error_log("Buscando carrito para usuario_id: " . $usuario_id);
     
     $carrito = $carritos->findOne(['usuario_id' => $usuario_id]);
     
-    error_log("Carrito encontrado: " . ($carrito ? "SÍ" : "NO"));
+    error_log("Carrito encontrado: " . ($carrito ? "Sí" : "NO"));
     
     return $carrito;
 }
@@ -48,15 +47,12 @@ function agregarAlCarrito($usuario_id, $producto_id, $cantidad) {
         return ['error' => 'Error al buscar producto: ' . $e->getMessage()];
     }
 
-    // Convertir usuario_id a entero
     $usuario_id = (int)$usuario_id;
     
-    // Buscar carrito existente
     $carrito = $carritos->findOne(['usuario_id' => $usuario_id]);
-    error_log("Carrito existente: " . ($carrito ? "SÍ" : "NO"));
+    error_log("Carrito existente: " . ($carrito ? "Sí" : "NO"));
 
     if (!$carrito) {
-        // Crear nuevo carrito
         error_log("Creando nuevo carrito...");
         
         $nuevoCarrito = [
@@ -66,7 +62,10 @@ function agregarAlCarrito($usuario_id, $producto_id, $cantidad) {
                 'nombre' => $producto['nombre'],
                 'precio_unitario' => (float)$producto['precio'],
                 'cantidad' => (int)$cantidad,
-                'unidad' => $producto['unidad'] ?? 'u'
+                'unidad' => $producto['unidad'] ?? 'u',
+                'productor_id' => $producto['productor_id'] ?? null,
+                'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido',
+                'estado' => 'pendiente' // Estado inicial del item
             ]],
             'fecha_creacion' => new MongoDB\BSON\UTCDateTime(),
             'fecha_actualizacion' => new MongoDB\BSON\UTCDateTime()
@@ -81,18 +80,15 @@ function agregarAlCarrito($usuario_id, $producto_id, $cantidad) {
             return ['error' => 'Error al crear carrito: ' . $e->getMessage()];
         }
     } else {
-        // Actualizar carrito existente
         error_log("Actualizando carrito existente...");
         
         $itemExistente = false;
         $items = $carrito['items'];
         
-        // Convertir a array si es BSONArray
         if ($items instanceof MongoDB\Model\BSONArray) {
             $items = iterator_to_array($items);
         }
         
-        // Verificar si el producto ya está en el carrito
         foreach ($items as $index => &$item) {
             if ((string)$item['producto_id'] === $producto_id) {
                 error_log("Producto ya existe en carrito, incrementando cantidad");
@@ -110,7 +106,10 @@ function agregarAlCarrito($usuario_id, $producto_id, $cantidad) {
                 'nombre' => $producto['nombre'],
                 'precio_unitario' => (float)$producto['precio'],
                 'cantidad' => (int)$cantidad,
-                'unidad' => $producto['unidad'] ?? 'u'
+                'unidad' => $producto['unidad'] ?? 'u',
+                'productor_id' => $producto['productor_id'] ?? null,
+                'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido',
+                'estado' => 'pendiente'
             ];
         }
 
@@ -153,12 +152,10 @@ function eliminarDelCarrito($usuario_id, $producto_id) {
         $items = iterator_to_array($items);
     }
     
-    // Filtrar el item a eliminar
     $items = array_values(array_filter($items, function($item) use ($producto_id) {
         return (string)$item['producto_id'] !== $producto_id;
     }));
     
-    // Actualizar el carrito
     $carritos->updateOne(
         ['usuario_id' => $usuario_id],
         [
@@ -214,5 +211,22 @@ function contarItemsCarrito($usuario_id) {
     }
     
     return count($carrito['items']);
+}
+
+/**
+ * Obtener el estado visual de un item según su estado
+ */
+function getEstadoItemBadge($estado) {
+    $estados = [
+        'pendiente' => ['class' => 'bg-warning text-dark', 'icon' => 'clock-history', 'texto' => 'Pendiente'],
+        'confirmado' => ['class' => 'bg-info', 'icon' => 'check-circle', 'texto' => 'Confirmado'],
+        'en_preparacion' => ['class' => 'bg-primary', 'icon' => 'box-seam', 'texto' => 'En preparación'],
+        'listo' => ['class' => 'bg-success', 'icon' => 'check-all', 'texto' => 'Listo para entregar'],
+        'entregado' => ['class' => 'bg-success', 'icon' => 'bag-check', 'texto' => 'Entregado'],
+        'no_entregado' => ['class' => 'bg-danger', 'icon' => 'x-circle', 'texto' => 'No se pudo entregar'],
+        'cancelado' => ['class' => 'bg-secondary', 'icon' => 'x-circle', 'texto' => 'Cancelado']
+    ];
+    
+    return $estados[$estado] ?? ['class' => 'bg-secondary', 'icon' => 'question-circle', 'texto' => ucfirst($estado)];
 }
 ?>
