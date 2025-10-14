@@ -34,6 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 '_id' => $itemArray['producto_id']
             ]);
             
+            // Obtener nombre del productor desde MySQL
+            $productorNombre = 'Desconocido';
+            if (isset($producto['productor_id'])) {
+                $stmt = $conexion->prepare("SELECT NombreRazonSocial FROM productores WHERE ProductorID = ?");
+                $stmt->bind_param("i", $producto['productor_id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($row = $result->fetch_assoc()) {
+                    $productorNombre = $row['NombreRazonSocial'];
+                }
+                $stmt->close();
+            }
+            
             $items[] = [
                 'producto_id' => $itemArray['producto_id'],
                 'nombre' => $itemArray['nombre'],
@@ -41,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'cantidad' => (int)$itemArray['cantidad'],
                 'unidad' => $itemArray['unidad'] ?? 'u',
                 'productor_id' => $producto['productor_id'] ?? null,
-                'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido',
-                'estado' => 'pendiente', // Estado inicial de cada item
+                'productor_nombre' => $productorNombre,
+                'estado' => 'pendiente',
                 'fecha_agregado' => new MongoDB\BSON\UTCDateTime()
             ];
         }
@@ -58,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'usuario_id' => (int)$usuario_id,
             'items' => $items,
             'total' => $total,
-            'estado' => 'pendiente', // Estado general del pedido (para compatibilidad)
+            'estado' => 'pendiente',
             'fecha_creacion' => new MongoDB\BSON\UTCDateTime(),
             'fecha_actualizacion' => new MongoDB\BSON\UTCDateTime()
         ];
@@ -66,10 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $pedidosCollection->insertOne($nuevoPedido);
         
         if ($resultado->getInsertedId()) {
-            // Vaciar el carrito después de confirmar
             vaciarCarrito($usuario_id);
-            
-            // Redirigir con mensaje de éxito
             header("Location: pedidos.php?msg=pedido_confirmado");
             exit;
         } else {
@@ -82,8 +92,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Calcular total para mostrar
-$total = calcularTotalCarrito($usuario_id);
+// Agrupar items por productor
+$itemsPorProductor = [];
+$totalGeneral = 0;
+
+foreach ($carrito['items'] as $item) {
+    $itemArray = is_array($item) ? $item : iterator_to_array($item);
+    
+    // Obtener el nombre real del productor desde MySQL
+    $productorNombre = 'Productor local';
+    $productorId = $itemArray['productor_id'] ?? 0;
+    
+    if ($productorId > 0) {
+        $stmt = $conexion->prepare("SELECT NombreRazonSocial FROM productores WHERE ProductorID = ?");
+        $stmt->bind_param("i", $productorId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $productorNombre = $row['NombreRazonSocial'];
+        }
+        $stmt->close();
+    }
+    
+    // Crear clave única para el productor
+    $claveProductor = $productorId . '_' . $productorNombre;
+    
+    if (!isset($itemsPorProductor[$claveProductor])) {
+        $itemsPorProductor[$claveProductor] = [
+            'nombre' => $productorNombre,
+            'id' => $productorId,
+            'items' => [],
+            'subtotal' => 0
+        ];
+    }
+    
+    $subtotal = $itemArray['precio_unitario'] * $itemArray['cantidad'];
+    $itemsPorProductor[$claveProductor]['items'][] = $itemArray;
+    $itemsPorProductor[$claveProductor]['subtotal'] += $subtotal;
+    $totalGeneral += $subtotal;
+}
+
+// Ordenar por nombre de productor
+ksort($itemsPorProductor);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -94,6 +144,27 @@ $total = calcularTotalCarrito($usuario_id);
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
+    <style>
+        .productor-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            margin-top: 20px;
+        }
+        .productor-card {
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .productor-subtotal {
+            background-color: #f8f9fa;
+            padding: 12px 20px;
+            font-weight: bold;
+            border-top: 2px solid #dee2e6;
+        }
+    </style>
 </head>
 <body>
     <div class="container-custom">
@@ -115,51 +186,75 @@ $total = calcularTotalCarrito($usuario_id);
                     </div>
                 <?php endif; ?>
 
-                <h5 class="mb-3">Productos en tu pedido:</h5>
+                <h5 class="mb-3">
+                    <i class="bi bi-shop"></i> Productos agrupados por vendedor:
+                    <span class="badge bg-secondary"><?= count($itemsPorProductor) ?> vendedor(es)</span>
+                </h5>
                 
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Producto</th>
-                                <th class="text-center">Cantidad</th>
-                                <th class="text-end">Precio Unit.</th>
-                                <th class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($carrito['items'] as $item): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?= htmlspecialchars($item['nombre']) ?></strong>
-                                        <br>
-                                        <small class="text-muted">
-                                            <?= htmlspecialchars($item['productor_nombre'] ?? 'Productor local') ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-center">
-                                        <?= $item['cantidad'] ?> <?= htmlspecialchars($item['unidad']) ?>
-                                    </td>
-                                    <td class="text-end">
-                                        $<?= number_format($item['precio_unitario'], 0, ',', '.') ?>
-                                    </td>
-                                    <td class="text-end">
-                                        <strong>$<?= number_format($item['precio_unitario'] * $item['cantidad'], 0, ',', '.') ?></strong>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                        <tfoot class="table-light">
-                            <tr>
-                                <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
-                                <td class="text-end">
-                                    <h4 class="text-success mb-0">
-                                        $<?= number_format($total, 0, ',', '.') ?>
-                                    </h4>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                <?php foreach ($itemsPorProductor as $productor): ?>
+                    <div class="productor-card">
+                        <div class="productor-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-badge"></i> 
+                                <?= htmlspecialchars($productor['nombre']) ?>
+                            </h5>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($productor['items'] as $item): ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= htmlspecialchars($item['nombre']) ?></strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <?= $item['cantidad'] ?> <?= htmlspecialchars($item['unidad']) ?>
+                                            </td>
+                                            <td class="text-end">
+                                                $<?= number_format($item['precio_unitario'], 0, ',', '.') ?>
+                                            </td>
+                                            <td class="text-end">
+                                                <strong>$<?= number_format($item['precio_unitario'] * $item['cantidad'], 0, ',', '.') ?></strong>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="productor-subtotal text-end">
+                            <i class="bi bi-calculator"></i> Subtotal de este vendedor: 
+                            <span class="text-primary">
+                                $<?= number_format($productor['subtotal'], 0, ',', '.') ?>
+                            </span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <div class="card bg-light border-success">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-cart-check"></i> TOTAL DEL PEDIDO
+                                </h5>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h3 class="text-success mb-0">
+                                    $<?= number_format($totalGeneral, 0, ',', '.') ?>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr>
@@ -168,7 +263,7 @@ $total = calcularTotalCarrito($usuario_id);
                     <i class="bi bi-info-circle"></i>
                     <strong>Importante:</strong>
                     <ul class="mb-0 mt-2">
-                        <li>Al confirmar, tu pedido será enviado a los productores</li>
+                        <li>Al confirmar, tu pedido será enviado a <strong><?= count($itemsPorProductor) ?> vendedor(es)</strong></li>
                         <li>Cada productor gestionará sus productos de forma independiente</li>
                         <li>Te contactarán para coordinar la entrega o retiro</li>
                         <li>Podrás ver el estado de cada producto en tu historial de pedidos</li>
