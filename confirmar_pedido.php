@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'conexion.php';
+require_once 'includes/funciones_carrito.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: loginus.php");
@@ -8,121 +9,186 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 $usuario_id = $_SESSION['usuario_id'];
-$carritosCollection = $database->Carritos;
-$pedidosCollection = $database->Pedidos;
-$productosCollection = $database->Productos;
 
-// Obtener carrito del usuario
-$carrito = $carritosCollection->findOne(['usuario_id' => $usuario_id]);
+// Obtener carrito
+$carrito = obtenerCarritoUsuario($usuario_id);
 
-// Si no hay carrito o está vacío
 if (!$carrito || empty($carrito['items'])) {
-    echo "<div style='padding:20px; font-family:Arial'>
-            <h2>🛒 Tu carrito está vacío</h2>
-            <a href='index.php'>Volver a la tienda</a>
-          </div>";
+    header("Location: pedidos.php");
     exit;
 }
 
-// Procesar la confirmación del pedido
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_pedido'])) {
-
-    $total = 0;
-    $itemsConProductor = [];
-    
-    // Enriquecer cada item con el productor_id desde la colección Productos
-    foreach ($carrito['items'] as $item) {
-        $total += $item['precio_unitario'] * $item['cantidad'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $pedidosCollection = $database->Pedidos;
+        $productosCollection = $database->Productos;
         
-        // Buscar el producto para obtener el productor_id
-        $producto = $productosCollection->findOne(['_id' => new MongoDB\BSON\ObjectId($item['producto_id'])]);
+        // Preparar items para el pedido asegurando que cada uno tenga su estado
+        $items = [];
+        foreach ($carrito['items'] as $item) {
+            // Convertir BSONArray a array si es necesario
+            $itemArray = is_array($item) ? $item : iterator_to_array($item);
+            
+            // Obtener información del productor desde el producto
+            $producto = $productosCollection->findOne([
+                '_id' => $itemArray['producto_id']
+            ]);
+            
+            $items[] = [
+                'producto_id' => $itemArray['producto_id'],
+                'nombre' => $itemArray['nombre'],
+                'precio_unitario' => (float)$itemArray['precio_unitario'],
+                'cantidad' => (int)$itemArray['cantidad'],
+                'unidad' => $itemArray['unidad'] ?? 'u',
+                'productor_id' => $producto['productor_id'] ?? null,
+                'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido',
+                'estado' => 'pendiente', // Estado inicial de cada item
+                'fecha_agregado' => new MongoDB\BSON\UTCDateTime()
+            ];
+        }
         
-        // Agregar productor_id al item
-        $itemEnriquecido = [
-            'producto_id' => $item['producto_id'],
-            'nombre' => $item['nombre'],
-            'precio_unitario' => $item['precio_unitario'],
-            'cantidad' => $item['cantidad'],
-            'unidad' => $item['unidad'] ?? 'u',
-            'productor_id' => $producto['productor_id'] ?? null, // ID del productor
-            'productor_nombre' => $producto['productor_nombre'] ?? 'Desconocido' // Opcional: nombre del productor
+        // Calcular total
+        $total = 0;
+        foreach ($items as $item) {
+            $total += $item['precio_unitario'] * $item['cantidad'];
+        }
+        
+        // Crear pedido
+        $nuevoPedido = [
+            'usuario_id' => (int)$usuario_id,
+            'items' => $items,
+            'total' => $total,
+            'estado' => 'pendiente', // Estado general del pedido (para compatibilidad)
+            'fecha_creacion' => new MongoDB\BSON\UTCDateTime(),
+            'fecha_actualizacion' => new MongoDB\BSON\UTCDateTime()
         ];
         
-        $itemsConProductor[] = $itemEnriquecido;
+        $resultado = $pedidosCollection->insertOne($nuevoPedido);
+        
+        if ($resultado->getInsertedId()) {
+            // Vaciar el carrito después de confirmar
+            vaciarCarrito($usuario_id);
+            
+            // Redirigir con mensaje de éxito
+            header("Location: pedidos.php?msg=pedido_confirmado");
+            exit;
+        } else {
+            $error = "No se pudo crear el pedido";
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error al confirmar pedido: " . $e->getMessage());
+        $error = "Error al procesar el pedido: " . $e->getMessage();
     }
-
-    $nuevoPedido = [
-        'usuario_id' => $usuario_id,
-        'items' => $itemsConProductor, // Items con productor_id incluido
-        'total' => $total,
-        'estado' => 'en_proceso',
-        'fecha_creacion' => new MongoDB\BSON\UTCDateTime(),
-        'fecha_actualizacion' => new MongoDB\BSON\UTCDateTime()
-    ];
-
-    // Guardar pedido
-    $pedidosCollection->insertOne($nuevoPedido);
-
-    // Vaciar carrito
-    $carritosCollection->deleteOne(['usuario_id' => $usuario_id]);
-
-    // Redirigir
-    header("Location: pedidos.php?msg=pedido_confirmado");
-    exit;
 }
+
+// Calcular total para mostrar
+$total = calcularTotalCarrito($usuario_id);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmar Pedido - AgroHub Misiones</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 </head>
-<body class="p-4 bg-light">
+<body>
+    <div class="container-custom">
+        <div class="header">
+            <h1>🌾 AgroHub Misiones</h1>
+            <p>Confirmar tu Pedido</p>
+        </div>
 
-    <div class="container">
-        <h1 class="mb-4">🧾 Confirmar Pedido</h1>
-        <a href="index.php" class="btn btn-secondary mb-3">⬅️ Seguir comprando</a>
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Resumen del Pedido
+                </h4>
+            </div>
+            <div class="card-body">
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> <?= htmlspecialchars($error) ?>
+                    </div>
+                <?php endif; ?>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unitario</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                $total = 0;
-                foreach ($carrito['items'] as $item): 
-                    $subtotal = $item['precio_unitario'] * $item['cantidad'];
-                    $total += $subtotal;
-                ?>
-                <tr>
-                    <td><?= htmlspecialchars($item['nombre']) ?></td>
-                    <td><?= $item['cantidad'] ?></td>
-                    <td>$<?= number_format($item['precio_unitario'], 0, ',', '.') ?></td>
-                    <td>$<?= number_format($subtotal, 0, ',', '.') ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-                <tr class="table-secondary">
-                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                    <td><strong>$<?= number_format($total, 0, ',', '.') ?></strong></td>
-                </tr>
-            </tfoot>
-        </table>
+                <h5 class="mb-3">Productos en tu pedido:</h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio Unit.</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($carrito['items'] as $item): ?>
+                                <tr>
+                                    <td>
+                                        <strong><?= htmlspecialchars($item['nombre']) ?></strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <?= htmlspecialchars($item['productor_nombre'] ?? 'Productor local') ?>
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <?= $item['cantidad'] ?> <?= htmlspecialchars($item['unidad']) ?>
+                                    </td>
+                                    <td class="text-end">
+                                        $<?= number_format($item['precio_unitario'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>$<?= number_format($item['precio_unitario'] * $item['cantidad'], 0, ',', '.') ?></strong>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                <td class="text-end">
+                                    <h4 class="text-success mb-0">
+                                        $<?= number_format($total, 0, ',', '.') ?>
+                                    </h4>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
 
-        <form method="POST">
-            <button type="submit" name="confirmar_pedido" class="btn btn-success btn-lg">
-                ✅ Confirmar Pedido
-            </button>
-            <a href="index.php" class="btn btn-outline-danger btn-lg">❌ Cancelar</a>
-        </form>
+                <hr>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Importante:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Al confirmar, tu pedido será enviado a los productores</li>
+                        <li>Cada productor gestionará sus productos de forma independiente</li>
+                        <li>Te contactarán para coordinar la entrega o retiro</li>
+                        <li>Podrás ver el estado de cada producto en tu historial de pedidos</li>
+                    </ul>
+                </div>
+
+                <form method="POST" class="mt-4">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="pedidos.php" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Volver al Carrito
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Confirmar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
