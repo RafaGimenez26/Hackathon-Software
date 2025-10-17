@@ -1,12 +1,34 @@
+
+nixpacks.toml
+Código 
+Si esto tampoco funciona, la solución más confiable es usar un Dockerfile. Sé que dijiste que no estás trabajando con Docker, pero Railway lo usará automáticamente si lo detecta y es la forma más confiable de instalar extensiones PHP:
+
+Dockerfile
+Código 
+Pasos a seguir:
+Primero intenta con el nixpacks.toml mejorado que usa php82Extensions.mongodb
+Si sigue fallando, agrega el Dockerfile a tu proyecto. Railway lo detectará automáticamente y lo usará en lugar de Nixpacks.
+Asegúrate de tener configuradas las variables de entorno en Railway (las que mencionamos antes)
+Haz commit y push de los cambios
+Verificación adicional:
+¿Tienes acceso a los logs completos del build en Railway? A veces hay mensajes adicionales que pueden indicar exactamente qué está fallando. Si puedes compartir más del log, puedo darte una solución más específica.
+
+¿Cuál opción prefieres probar primero: el nixpacks mejorado o ir directo al Dockerfile?
+
+
+
+
+
+
+
+
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer']
+nixPkgs = ['php82', 'php82Extensions.mongodb', 'php82Packages.composer']
 
 [phases.install]
 cmds = [
-    'pecl install mongodb',
-    'echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongodb.ini',
     'composer install --optimize-autoloader --no-scripts --no-interaction'
 ]
 
 [start]
-cmd = 'php -S 0.0.0.0:$PORT -t public'
+cmd = 'php -S 0.0.0.0:$PORT -t .'
