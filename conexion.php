@@ -18,11 +18,11 @@ $isRailway = isset($_ENV['RAILWAY_ENVIRONMENT']) || getenv('RAILWAY_ENVIRONMENT'
 // 3. Obtener credenciales MySQL según el entorno
 if ($isRailway) {
     // Variables de Railway MySQL (se generan automáticamente)
-    $host = $_ENV['MYSQL_HOST'] ?? getenv('MYSQL_HOST') ?? 'localhost';
-    $usuario = $_ENV['MYSQL_USER'] ?? getenv('MYSQL_USER') ?? 'root';
-    $password = $_ENV['MYSQL_PASSWORD'] ?? getenv('MYSQL_PASSWORD') ?? '';
-    $base_de_datos = $_ENV['MYSQL_DATABASE'] ?? getenv('MYSQL_DATABASE') ?? 'railway';
-    $puerto = $_ENV['MYSQL_PORT'] ?? getenv('MYSQL_PORT') ?? 3306;
+    $host = $_ENV['MYSQLHOST'] ?? getenv('MYSQL_HOST') ?? 'localhost';
+    $usuario = $_ENV['MYSQLUSER'] ?? getenv('MYSQL_USER') ?? 'root';
+    $password = $_ENV['MYSQLPASSWORD'] ?? getenv('MYSQL_PASSWORD') ?? '';
+    $base_de_datos = $_ENV['MYSQLDATABASE'] ?? getenv('MYSQL_DATABASE') ?? 'railway';
+    $puerto = $_ENV['MYSQLPORT'] ?? getenv('MYSQLPORT') ?? 3306;
 } else {
     // Variables locales desde .env
     $host = $_ENV['host'] ?? 'localhost';
