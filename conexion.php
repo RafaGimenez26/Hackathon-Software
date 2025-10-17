@@ -6,9 +6,11 @@ require 'vendor/autoload.php';
  * Usa variables de entorno definidas en el archivo .env
  */
 
-// 1. Cargar variables de entorno desde .env
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
+// 1. Cargar variables de entorno desde .env si existe
+if (file_exists(__DIR__ . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+}
 
 // 2. Obtener las credenciales desde las variables de entorno
 $host = $_ENV['host'] ?? 'sql10802401';
