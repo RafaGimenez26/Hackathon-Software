@@ -1,86 +1,75 @@
-# Usar imagen base de PHP 8.3 con Apache
-FROM php:8.3-apache
+# Imagen base PHP CLI (más simple que Apache)
+FROM php:8.3-cli
 
-# Variables de entorno para la instalación
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependencias del sistema necesarias
+# Instalar dependencias
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libcurl4-openssl-dev \
-    pkg-config \
-    libssl-dev \
-    zip \
-    unzip \
-    libzip-dev \
+    git curl zip unzip \
+    libssl-dev libcurl4-openssl-dev pkg-config \
+    libzip-dev libpng-dev libonig-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones PHP básicas
+# Instalar extensiones PHP
 RUN docker-php-ext-install mysqli pdo pdo_mysql mbstring zip
 
-# Instalar extensión MongoDB ÚLTIMA VERSIÓN (2.x compatible)
-RUN pecl channel-update pecl.php.net \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb
+# Instalar MongoDB extension
+RUN pecl channel-update pecl.php.net && \
+    pecl install mongodb && \
+    docker-php-ext-enable mongodb
 
-# Verificar que MongoDB está instalado correctamente
-RUN php -m | grep mongodb || (echo "ERROR: MongoDB extension not loaded" && exit 1)
+# Verificar instalación
+RUN php -m | grep -E '(mongodb|mysqli)' && \
+    echo "✓ Extensiones instaladas correctamente"
 
-# Copiar Composer desde su imagen oficial
+# Copiar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Establecer directorio de trabajo
-WORKDIR /var/www/html
+WORKDIR /app
 
-# Copiar composer.json y composer.lock primero (para aprovechar cache de Docker)
+# Copiar dependencias
 COPY composer.json composer.lock* ./
 
-# Limpiar cache de Composer y reinstalar dependencias
-RUN composer clear-cache \
-    && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-req=ext-mongodb
+# Instalar dependencias
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist \
+    --ignore-platform-req=ext-mongodb
 
-# Copiar el resto de los archivos del proyecto
+# Copiar código fuente
 COPY . .
 
-# Crear directorios necesarios con permisos
-RUN mkdir -p img uploads pdf/temp \
-    && chmod -R 755 img uploads pdf
+# Crear directorios con permisos
+RUN mkdir -p img uploads pdf/temp && \
+    chmod -R 777 img uploads pdf/temp
 
-# Configurar permisos correctos
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Crear script de inicio
+RUN printf '#!/bin/bash\n\
+set -e\n\
+\n\
+PORT=${PORT:-8080}\n\
+\n\
+echo "================================="\n\
+echo "  Iniciando servidor PHP"\n\
+echo "  Puerto: $PORT"\n\
+echo "  Directorio: $(pwd)"\n\
+echo "================================="\n\
+\n\
+echo ""\n\
+echo "Archivos disponibles:"\n\
+ls -lah | grep -E "\\.php$" | head -n 10\n\
+echo ""\n\
+\n\
+echo "Extensiones PHP cargadas:"\n\
+php -m | grep -E "(mongodb|mysqli)"\n\
+echo ""\n\
+\n\
+echo "Iniciando servidor en 0.0.0.0:$PORT"\n\
+exec php -S 0.0.0.0:$PORT -t . 2>&1\n' > /start.sh && \
+chmod +x /start.sh
 
-# Habilitar mod_rewrite de Apache
-RUN a2enmod rewrite
+EXPOSE 8080
 
-# Configurar Apache correctamente
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
-    && echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Verificar que index.php existe
-RUN ls -la /var/www/html/index.php || echo "WARNING: index.php not found!"
-
-# Configurar DirectoryIndex para servir index.php por defecto
-RUN echo '<Directory /var/www/html/>\n\
-    Options Indexes FollowSymLinks\n\
-    AllowOverride All\n\
-    Require all granted\n\
-    DirectoryIndex index.php index.html\n\
-</Directory>' > /etc/apache2/conf-available/docker-php.conf \
-    && a2enconf docker-php
-
-# Exponer puerto 80
-EXPOSE 80
-
-# Variables de entorno
-ENV APACHE_RUN_USER=www-data
-ENV APACHE_RUN_GROUP=www-data
-ENV APACHE_LOG_DIR=/var/log/apache2
-ENV APACHE_DOCUMENT_ROOT=/var/www/html
-
-# Comando de inicio simple (sin script personalizado que puede causar problemas)
-CMD ["apache2-foreground"]
+CMD ["/start.sh"]
