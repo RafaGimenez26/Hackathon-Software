@@ -3,5 +3,16 @@
         "mongodb/mongodb": "^2.1",
         "vlucas/phpdotenv": "^5.6",
         "tecnickcom/tcpdf": "^6.10"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@php -r \"echo 'Dependencias instaladas correctamente';\"",
+            "@php -r \"if (!extension_loaded('mongodb')) { echo 'ADVERTENCIA: Extensión MongoDB no encontrada'; exit(1); }\""
+        ]
     }
 }
