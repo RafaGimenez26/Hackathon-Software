@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Validar campos obligatorios
-$campos_requeridos = ['nombre', 'precio', 'punto_venta', 'categoria', 'unidad'];
+$campos_requeridos = ['nombre', 'precio', 'punto_venta', 'categoria', 'unidad', 'costo_unitario'];
 foreach ($campos_requeridos as $campo) {
     if (empty($_POST[$campo])) {
         $response['message'] = "El campo '$campo' es obligatorio";
@@ -90,6 +90,7 @@ try {
         'descripcion' => trim($_POST['descripcion'] ?? ''),
         'categoria' => $_POST['categoria'],
         'precio' => (float)$_POST['precio'],
+        'costo_unitario' => (float)$_POST['costo_unitario'],
         'unidad' => $_POST['unidad'],
         'stock_disponible' => isset($_POST['stock_disponible']) && $_POST['stock_disponible'] !== '' 
             ? (int)$_POST['stock_disponible'] 

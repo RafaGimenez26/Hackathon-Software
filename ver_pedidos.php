@@ -40,10 +40,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['accion'])) {
                         break;
                     case "entregado":
                         $nuevoEstado = "entregado";
+                        
+                        // Descontar stock
                         $productosCollection->updateOne(
                             ['_id' => $item['producto_id']],
                             ['$inc' => ['stock_disponible' => -$item['cantidad']]]
                         );
+                        
+                        // REGISTRAR VENTA
+                        $ventasCollection = $database->productos_vendidos;
+                        $ventasCollection->insertOne([
+                            'producto' => [
+                                'id' => $item['producto_id'],
+                                'nombre' => $item['nombre']
+                            ],
+                            'vendedor' => [
+                                'productor_id' => (int)$productor_id,
+                                'nombre' => $productor['NombreRazonSocial'] ?? 'Desconocido'
+                            ],
+                            'cantidad' => (int)$item['cantidad'],
+                            'precio_unitario' => (float)$item['precio_unitario'],
+                            'monto_total' => (float)($item['precio_unitario'] * $item['cantidad']),
+                            'fecha_venta' => new MongoDB\BSON\UTCDateTime(),
+                            'pedido_id' => $pedidoId
+                        ]);
                         break;
                     case "no_se_pudo_entregar":
                         $nuevoEstado = "no_entregado";

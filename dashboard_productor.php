@@ -12,51 +12,7 @@ if (!isset($_SESSION['ProductorID'])) {
 $productor_id = $_SESSION['ProductorID'];
 $nombre_productor = $_SESSION['nombre_productor'];
 
-// === ACTUALIZAR STOCK (llamado AJAX) ===
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_stock'])) {
-    $producto_id = $_POST['producto_id'];
-    $nuevo_stock = (int)$_POST['nuevo_stock'];
 
-    try {
-        $result = $collection->updateOne(
-            [
-                '_id' => new MongoDB\BSON\ObjectId($producto_id),
-                'productor_id' => (int)$productor_id
-            ],
-            ['$set' => ['stock_disponible' => $nuevo_stock]]
-        );
-
-        if ($result->getModifiedCount() > 0 || $result->getMatchedCount() > 0) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró el producto o no pertenece al productor.']);
-        }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// === ELIMINAR PRODUCTO (llamado AJAX) ===
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
-    $delete_id = $_POST['delete_id'];
-
-    try {
-        $result = $collection->deleteOne([
-            '_id' => new MongoDB\BSON\ObjectId($delete_id),
-            'productor_id' => (int)$productor_id
-        ]);
-
-        if ($result->getDeletedCount() > 0) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró el producto o no pertenece al productor.']);
-        }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    exit;
-}
 
 // === OBTENER DATOS DE VENTAS PARA GRÁFICOS ===
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['get_ventas_data'])) {
@@ -160,9 +116,6 @@ try {
         .stats-card {
             border-left: 4px solid #198754;
         }
-        .stock-input {
-            width: 80px;
-        }
     </style>
 </head>
 <body class="bg-light">
@@ -172,6 +125,7 @@ try {
         <h1 class="h3 text-success">🌿 Panel del Productor</h1>
         <p class="text-muted mb-0">Bienvenido, <?= htmlspecialchars($nombre_productor) ?></p>
         <div>
+            <a href="alta_baja_stock.php" class="btn btn-outline-secondary"><i class="bi bi-gear"></i> Alta/Baja de Stock</a>
             <a href="cargar_producto.php" class="btn btn-success">➕ Cargar Nuevo Producto</a>
             <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
             <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
@@ -218,7 +172,6 @@ try {
                             <th>Stock</th>
                             <th>Unidad</th>
                             <th>Punto de Venta</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -232,37 +185,15 @@ try {
                             <td><?= htmlspecialchars($p->descripcion ?? '—') ?></td>
                             <td><?= htmlspecialchars($p->categoria ?? '—') ?></td>
                             <td>$<?= number_format($p->precio ?? 0, 2) ?></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <input 
-                                        type="number" 
-                                        class="form-control form-control-sm stock-input" 
-                                        id="stock-<?= $p->_id ?>" 
-                                        value="<?= htmlspecialchars($p->stock_disponible ?? '0') ?>"
-                                        min="0"
-                                    >
-                                    <button 
-                                        class="btn btn-sm btn-outline-primary" 
-                                        onclick="actualizarStock('<?= $p->_id ?>')"
-                                        title="Actualizar stock"
-                                    >
-                                        💾
-                                    </button>
-                                </div>
-                            </td>
+                            <td><?= htmlspecialchars($p->stock_disponible ?? '0') ?></td>
                             <td><?= htmlspecialchars($p->unidad ?? '—') ?></td>
                             <td><?= htmlspecialchars($p->punto_venta ?? '—') ?></td>
-                            <td>
-                                <button class="btn btn-sm btn-danger" onclick="eliminarProducto('<?= $p->_id ?>')">
-                                    🗑️ Eliminar
-                                </button>
-                            </td>
                         </tr>
                         <?php endforeach; ?>
 
                         <?php if (!$tieneProductos): ?>
                         <tr>
-                            <td colspan="8" class="text-muted py-4 text-center">Aún no has publicado productos.</td>
+                            <td colspan="7" class="text-muted py-4 text-center">Aún no has publicado productos.</td>
                         </tr>
                         <?php endif; ?>
                     </tbody>
@@ -393,75 +324,6 @@ function crearGraficoProductosMasVendidos(datos) {
                     }
                 }
             }
-        }
-    });
-}
-
-// === Función para actualizar stock ===
-function actualizarStock(id) {
-    const nuevoStock = document.getElementById('stock-' + id).value;
-    
-    if (nuevoStock < 0) {
-        Swal.fire('Error', 'El stock no puede ser negativo.', 'error');
-        return;
-    }
-    
-    fetch('dashboard_productor.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'update_stock=1&producto_id=' + encodeURIComponent(id) + '&nuevo_stock=' + nuevoStock
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Stock actualizado',
-                text: 'El stock se actualizó correctamente.',
-                timer: 1500,
-                showConfirmButton: false
-            });
-        } else {
-            Swal.fire('Error', data.error || 'No se pudo actualizar el stock.', 'error');
-        }
-    })
-    .catch(() => {
-        Swal.fire('Error', 'Hubo un problema al actualizar el stock.', 'error');
-    });
-}
-
-// === Función para eliminar producto ===
-function eliminarProducto(id) {
-    Swal.fire({
-        title: '¿Eliminar producto?',
-        text: "Esta acción no se puede deshacer.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch('dashboard_productor.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'delete_id=' + encodeURIComponent(id)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('row-' + id).remove();
-                    Swal.fire('Eliminado', 'El producto fue eliminado correctamente.', 'success');
-                    // Recargar gráficos
-                    cargarDatosVentas();
-                } else {
-                    Swal.fire('Error', data.error || 'No se pudo eliminar el producto.', 'error');
-                }
-            })
-            .catch(() => {
-                Swal.fire('Error', 'Hubo un problema al eliminar el producto.', 'error');
-            });
         }
     });
 }

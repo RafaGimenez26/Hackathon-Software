@@ -62,6 +62,27 @@ $dias_resultado = $conexion->query("SELECT DiaID, NombreDia FROM catalogodias OR
       content: " *";
       color: #dc3545;
     }
+    .margen-ganancia {
+      padding: 10px;
+      border-radius: 8px;
+      background: #e7f3ff;
+      border: 1px solid #2196F3;
+      margin-top: 10px;
+      display: none;
+    }
+    .margen-ganancia.show {
+      display: block;
+    }
+    .margen-positivo {
+      background: #e8f5e9;
+      border-color: #4CAF50;
+      color: #2d5a2d;
+    }
+    .margen-negativo {
+      background: #ffebee;
+      border-color: #f44336;
+      color: #c62828;
+    }
   </style>
   <link href="style.css" rel="stylesheet">
 </head>
@@ -131,19 +152,43 @@ $dias_resultado = $conexion->query("SELECT DiaID, NombreDia FROM catalogodias OR
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="precio" class="form-label required-label">Precio</label>
+              <label for="costo_unitario" class="form-label required-label">Costo Unitario</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" id="costo_unitario" name="costo_unitario" 
+                       step="0.01" min="0" placeholder="0.00" required>
+              </div>
+              <small class="text-muted">Cuánto te cuesta producir/conseguir cada unidad</small>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="precio" class="form-label required-label">Precio de Venta</label>
               <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="number" class="form-control" id="precio" name="precio" 
                        step="0.01" min="0" placeholder="0.00" required>
               </div>
+              <small class="text-muted">Precio al que venderás cada unidad</small>
             </div>
+          </div>
 
-            <div class="col-md-6 mb-3">
-              <label for="stock_disponible" class="form-label">Stock Disponible</label>
-              <input type="number" class="form-control" id="stock_disponible" name="stock_disponible" 
-                     min="0" placeholder="Cantidad disponible">
+          <!-- Indicador de margen de ganancia -->
+          <div id="margen-info" class="margen-ganancia">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Margen de ganancia:</strong>
+                <span id="margen-valor">$0</span>
+              </div>
+              <div>
+                <span class="badge bg-success" id="margen-porcentaje">0%</span>
+              </div>
             </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="stock_disponible" class="form-label">Stock Disponible</label>
+            <input type="number" class="form-control" id="stock_disponible" name="stock_disponible" 
+                   min="0" placeholder="Cantidad disponible">
           </div>
 
           <div class="mb-3">
@@ -245,7 +290,7 @@ $dias_resultado = $conexion->query("SELECT DiaID, NombreDia FROM catalogodias OR
           <span id="btn-text">Publicar Producto</span>
           <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
         </button>
-        <a href="misproductos.php" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+        <a href="dashboard_productor.php" class="btn btn-outline-secondary btn-lg">Cancelar</a>
       </div>
     </div>
   </form>
@@ -261,6 +306,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSubmit = document.getElementById('btn-submit');
     const btnText = document.getElementById('btn-text');
     const btnSpinner = document.getElementById('btn-spinner');
+    
+    // Inputs para calcular margen
+    const costoInput = document.getElementById('costo_unitario');
+    const precioInput = document.getElementById('precio');
+    const margenInfo = document.getElementById('margen-info');
+    const margenValor = document.getElementById('margen-valor');
+    const margenPorcentaje = document.getElementById('margen-porcentaje');
+
+    // Calcular y mostrar margen de ganancia
+    function calcularMargen() {
+        const costo = parseFloat(costoInput.value) || 0;
+        const precio = parseFloat(precioInput.value) || 0;
+        
+        if (costo > 0 && precio > 0) {
+            const margen = precio - costo;
+            const porcentaje = ((margen / costo) * 100).toFixed(2);
+            
+            margenValor.textContent = '$' + margen.toLocaleString('es-AR', {minimumFractionDigits: 2});
+            margenPorcentaje.textContent = porcentaje + '%';
+            
+            margenInfo.classList.add('show');
+            
+            // Cambiar color según el margen
+            if (margen > 0) {
+                margenInfo.classList.add('margen-positivo');
+                margenInfo.classList.remove('margen-negativo');
+                margenPorcentaje.className = 'badge bg-success';
+            } else if (margen < 0) {
+                margenInfo.classList.add('margen-negativo');
+                margenInfo.classList.remove('margen-positivo');
+                margenPorcentaje.className = 'badge bg-danger';
+            } else {
+                margenInfo.classList.remove('margen-positivo', 'margen-negativo');
+                margenPorcentaje.className = 'badge bg-secondary';
+            }
+        } else {
+            margenInfo.classList.remove('show');
+        }
+    }
+    
+    costoInput.addEventListener('input', calcularMargen);
+    precioInput.addEventListener('input', calcularMargen);
 
     // Vista previa de imagen
     imagenInput.addEventListener('change', function() {
@@ -300,6 +387,20 @@ document.addEventListener('DOMContentLoaded', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
+        
+        // Validar que el precio sea mayor que el costo
+        const costo = parseFloat(costoInput.value) || 0;
+        const precio = parseFloat(precioInput.value) || 0;
+        
+        if (precio < costo) {
+            mensajeDiv.className = 'alert alert-warning';
+            mensajeDiv.innerHTML = '<strong>Advertencia:</strong> El precio de venta es menor que el costo unitario. Tendrás pérdidas en cada venta.';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            if (!confirm('⚠️ El precio de venta es menor que el costo. ¿Estás seguro de continuar?')) {
+                return;
+            }
+        }
 
         mensajeDiv.innerHTML = '';
         btnSubmit.disabled = true;
@@ -319,10 +420,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 mensajeDiv.innerHTML = `
                     <strong>¡Producto publicado con éxito!</strong><br>
                     ${data.message}<br>
-                    <a href="misproductos.php" class="alert-link">Ver mis productos</a>
+                    <a href="dashboard_productor.php" class="alert-link">Ver mis productos</a>
                 `;
                 form.reset();
                 previewContainer.innerHTML = '<p class="text-muted">Vista previa de la imagen</p>';
+                margenInfo.classList.remove('show');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 mensajeDiv.className = 'alert alert-danger';
