@@ -1,0 +1,247 @@
+/* ========================================
+           ESTILOS ESPECÍFICOS SOLO PARA INDEX.PHP
+           ======================================== */
+        
+        /* Estilos para la búsqueda */
+        #busquedaInput {
+            border-left: none;
+        }
+        
+        #busquedaInput:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #86b7fe;
+        }
+
+        .input-group:focus-within #busquedaInput {
+            border-color: #86b7fe;
+        }
+
+        .search-highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        #busquedaMensaje {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animación del botón de filtros */
+        .btn-filtros {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-filtros:not(.collapsed) {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .btn-filtros .bi-funnel {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-filtros:not(.collapsed) .bi-funnel {
+            transform: rotate(180deg);
+        }
+
+        .badge-filtros-activos {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Asegurar que las columnas del grid tengan la misma altura */
+        #productos-grid .row.g-3 > [class*='col-'] {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        /* Tarjetas con altura fija SOLO en index */
+        #productos-grid .producto-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 680px;
+            max-height: 680px;
+        }
+
+        #productos-grid .producto-card .product-image-placeholder {
+            height: 180px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* Badge del productor con altura fija */
+        #productos-grid .productor-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+            min-height: 40px;
+            flex-shrink: 0;
+        }
+        
+        #productos-grid .productor-badge i {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        
+        #productos-grid .productor-nombre {
+            font-weight: 600;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        #productos-grid .productor-contacto {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        /* Título del producto con altura controlada */
+        #productos-grid .producto-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.3;
+            min-height: 2.6em;
+            max-height: 2.6em;
+        }
+
+        /* Descripción con altura controlada */
+        #productos-grid .product-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 8px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.4;
+            min-height: 2.8em;
+            max-height: 2.8em;
+            flex-shrink: 0;
+        }
+
+        /* Información del productor compacta */
+        #productos-grid .productor-info {
+            margin: 8px 0;
+            flex-shrink: 0;
+        }
+
+        #productos-grid .productor-info .ubicacion {
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #productos-grid .productor-info .ubicacion i {
+            flex-shrink: 0;
+        }
+
+        /* Disponibilidad y stock compactos */
+        #productos-grid .disponibilidad {
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            margin: 8px 0;
+            flex-shrink: 0;
+        }
+
+        #productos-grid .stock-info {
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        /* Selector de cantidad al final */
+        #productos-grid .cantidad-selector {
+            margin-top: auto;
+            flex-shrink: 0;
+            padding-top: 10px;
+        }
+
+        /* Badges más compactos */
+        #productos-grid .producto-tipo,
+        #productos-grid .badge {
+            font-size: 0.75rem;
+        }
+
+        #productos-grid .precio {
+            font-size: 1.25rem;
+        }
+
+        /* Responsive para tarjetas uniformes */
+        @media (max-width: 1200px) {
+            #productos-grid .producto-card {
+                min-height: 720px;
+                max-height: 720px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            #productos-grid .producto-card {
+                min-height: 700px;
+                max-height: 700px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #productos-grid .producto-card {
+                min-height: 650px;
+                max-height: 650px;
+            }
+
+            #productos-grid .product-image-placeholder {
+                height: 160px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            #productos-grid .producto-card {
+                min-height: auto;
+                max-height: none;
+            }
+        }
