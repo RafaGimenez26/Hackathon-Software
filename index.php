@@ -158,6 +158,76 @@ function getCategoriaEmoji($categoria) {
            ESTILOS ESPECÍFICOS SOLO PARA INDEX.PHP
            ======================================== */
         
+        /* Estilos para la búsqueda */
+        #busquedaInput {
+            border-left: none;
+        }
+        
+        #busquedaInput:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #86b7fe;
+        }
+
+        .input-group:focus-within #busquedaInput {
+            border-color: #86b7fe;
+        }
+
+        .search-highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        #busquedaMensaje {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animación del botón de filtros */
+        .btn-filtros {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-filtros:not(.collapsed) {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .btn-filtros .bi-funnel {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-filtros:not(.collapsed) .bi-funnel {
+            transform: rotate(180deg);
+        }
+
+        .badge-filtros-activos {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
         /* Asegurar que las columnas del grid tengan la misma altura */
         #productos-grid .row.g-3 > [class*='col-'] {
             display: flex;
@@ -352,73 +422,152 @@ function getCategoriaEmoji($categoria) {
         <div>
             <h2 class="tab-title">Productos Frescos Disponibles</h2>
 
-            <!-- FORMULARIO DE FILTROS -->
-            <form method="GET" action="index.php" id="filtrosForm">
-                <div class="filters-section">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <div class="filter-group">
-                                <label class="form-label">🥬 Tipo de Producto</label>
-                                <select class="form-select" name="categoria" onchange="this.form.submit()">
-                                    <option value="todos">Todos los productos</option>
-                                    <?php foreach ($categorias_map as $key => $value): ?>
-                                        <option value="<?= $key ?>" <?= $filtro_categoria === $key ? 'selected' : '' ?>>
-                                            <?= $value ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+            <!-- BARRA DE BÚSQUEDA -->
+            <div class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-lg-9">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="bi bi-search"></i> Búsqueda Rápida
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white">
+                                        <i class="bi bi-search text-primary"></i>
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="busquedaInput" 
+                                           placeholder="Buscar productos, puntos de venta, zonas... (Ej: 'pan', 'tomate itaembe', 'miel centro')"
+                                           autocomplete="off">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda" title="Limpiar búsqueda">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted ms-2">
+                                    <i class="bi bi-lightbulb"></i> 
+                                    Tip: Busca por nombre de producto, punto de venta o zona. Ejemplo: "pan itaembe" para panes en Itaembe Mini
+                                </small>
+                            </div>
+                            <div class="col-lg-3 mt-3 mt-lg-0">
+                                <button class="btn btn-outline-primary w-100 btn-lg btn-filtros collapsed position-relative" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#filtrosCollapse"
+                                        id="btnFiltros">
+                                    <i class="bi bi-funnel me-2"></i>
+                                    <span class="filtros-text">Mostrar Filtros</span>
+                                    <?php 
+                                    $filtros_activos = 0;
+                                    if ($filtro_categoria && $filtro_categoria !== 'todos') $filtros_activos++;
+                                    if ($filtro_zona && $filtro_zona !== 'todas') $filtros_activos++;
+                                    if ($filtro_dia && $filtro_dia !== 'todos') $filtros_activos++;
+                                    if ($filtro_precio < 5000) $filtros_activos++;
+                                    
+                                    if ($filtros_activos > 0): ?>
+                                        <span class="badge-filtros-activos"><?= $filtros_activos ?></span>
+                                    <?php endif; ?>
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="filter-group">
-                                <label class="form-label">📍 Feria/Zona de Posadas</label>
-                                <select class="form-select" name="zona" onchange="this.form.submit()">
-                                    <option value="todas">Todas las zonas</option>
-                                    <?php foreach ($zonas_map as $key => $value): ?>
-                                        <option value="<?= $key ?>" <?= $filtro_zona === $key ? 'selected' : '' ?>>
-                                            <?= $value ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+
+                        <!-- Spinner de carga -->
+                        <div id="busquedaSpinner" class="text-center mt-3 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Buscando...</span>
                             </div>
+                            <p class="text-muted mt-2">Buscando productos...</p>
                         </div>
-                        <div class="col-md-3">
-                            <div class="filter-group">
-                                <label class="form-label">📅 Disponibilidad</label>
-                                <select class="form-select" name="dia" onchange="this.form.submit()">
-                                    <option value="todos">Cualquier día</option>
-                                    <?php foreach ($dias_map as $key => $value): ?>
-                                        <option value="<?= $key ?>" <?= $filtro_dia === $key ? 'selected' : '' ?>>
-                                            <?= $value ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="filter-group">
-                                <label class="form-label">💰 Rango de Precio</label>
-                                <input type="range" class="form-range" name="precio" id="precioRange" 
-                                       min="0" max="100000" step="100" value="<?= $filtro_precio ?>"
-                                       oninput="updatePrecioLabel(this.value)">
-                                <small class="text-muted" id="precioLabel">Hasta $<?= number_format($filtro_precio, 0, ',', '.') ?> por unidad</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12 text-end">
-                            <a href="index.php" class="btn btn-secondary btn-sm">Limpiar Filtros</a>
-                        </div>
+
+                        <!-- Mensaje de resultados -->
+                        <div id="busquedaMensaje" class="mt-3 d-none"></div>
                     </div>
                 </div>
-            </form>
+            </div>
+
+            <!-- FORMULARIO DE FILTROS COLAPSABLE -->
+            <div class="collapse mb-4" id="filtrosCollapse">
+                <form method="GET" action="index.php" id="filtrosForm">
+                    <div class="filters-section">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">
+                                <i class="bi bi-sliders"></i> Filtros Avanzados
+                            </h5>
+                            <?php if ($filtros_activos > 0): ?>
+                                <span class="badge bg-success"><?= $filtros_activos ?> filtro(s) activo(s)</span>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="filter-group">
+                                    <label class="form-label">🥬 Tipo de Producto</label>
+                                    <select class="form-select" name="categoria" onchange="this.form.submit()">
+                                        <option value="todos">Todos los productos</option>
+                                        <?php foreach ($categorias_map as $key => $value): ?>
+                                            <option value="<?= $key ?>" <?= $filtro_categoria === $key ? 'selected' : '' ?>>
+                                                <?= $value ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="filter-group">
+                                    <label class="form-label">📍 Feria/Zona de Posadas</label>
+                                    <select class="form-select" name="zona" onchange="this.form.submit()">
+                                        <option value="todas">Todas las zonas</option>
+                                        <?php foreach ($zonas_map as $key => $value): ?>
+                                            <option value="<?= $key ?>" <?= $filtro_zona === $key ? 'selected' : '' ?>>
+                                                <?= $value ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="filter-group">
+                                    <label class="form-label">📅 Disponibilidad</label>
+                                    <select class="form-select" name="dia" onchange="this.form.submit()">
+                                        <option value="todos">Cualquier día</option>
+                                        <?php foreach ($dias_map as $key => $value): ?>
+                                            <option value="<?= $key ?>" <?= $filtro_dia === $key ? 'selected' : '' ?>>
+                                                <?= $value ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="filter-group">
+                                    <label class="form-label">💰 Rango de Precio</label>
+                                    <input type="range" class="form-range" name="precio" id="precioRange" 
+                                           min="0" max="100000" step="100" value="<?= $filtro_precio ?>"
+                                           oninput="updatePrecioLabel(this.value)">
+                                    <small class="text-muted" id="precioLabel">Hasta $<?= number_format($filtro_precio, 0, ',', '.') ?> por unidad</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12 text-end">
+                                <a href="index.php" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-x-circle"></i> Limpiar Filtros
+                                </a>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('filtrosForm').submit()">
+                                    <i class="bi bi-check-circle"></i> Aplicar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
             <!-- CONTADOR Y VISTA -->
             <div class="productos-header">
                 <div class="productos-count">
-                    <strong><?= $total_productos ?> productos encontrados</strong>
+                    <strong id="contadorProductos"><?= $total_productos ?> productos encontrados</strong>
                     <?php if ($total_paginas > 1): ?>
-                        <span class="text-muted ms-2">(Página <?= $pagina_actual ?> de <?= $total_paginas ?>)</span>
+                        <span class="text-muted ms-2" id="paginacionInfo">(Página <?= $pagina_actual ?> de <?= $total_paginas ?>)</span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -682,6 +831,115 @@ function getCategoriaEmoji($categoria) {
                 card.addEventListener('mouseleave', () => card.style.transform = 'translateY(0)');
             });
         });
+
+        const inputBusqueda = document.getElementById('busquedaInput');
+    const spinner = document.getElementById('busquedaSpinner');
+    const mensaje = document.getElementById('busquedaMensaje');
+    const gridProductos = document.getElementById('productos-grid');
+    const btnLimpiar = document.getElementById('btnLimpiarBusqueda');
+
+    let timeoutBusqueda = null;
+
+    inputBusqueda.addEventListener('input', function() {
+        const termino = this.value.trim();
+
+        clearTimeout(timeoutBusqueda);
+
+        // Si se borra el texto, recargar productos originales
+        if (termino.length === 0) {
+            mensaje.classList.add('d-none');
+            spinner.classList.add('d-none');
+            location.reload();
+            return;
+        }
+
+        // Esperar 500ms antes de buscar
+        timeoutBusqueda = setTimeout(() => {
+            buscarProductos(termino);
+        }, 500);
+    });
+
+    btnLimpiar.addEventListener('click', () => {
+        inputBusqueda.value = '';
+        mensaje.classList.add('d-none');
+        spinner.classList.add('d-none');
+        location.reload();
+    });
+
+    function buscarProductos(termino) {
+        spinner.classList.remove('d-none');
+        mensaje.classList.add('d-none');
+
+        fetch(`buscar_productos.php?q=${encodeURIComponent(termino)}`)
+            .then(res => res.json())
+            .then(data => {
+                spinner.classList.add('d-none');
+                gridProductos.innerHTML = '';
+
+                if (data.error) {
+                    mensaje.classList.remove('d-none');
+                    mensaje.innerHTML = `<div class="alert alert-danger">${data.mensaje}</div>`;
+                    return;
+                }
+
+                if (data.productos.length === 0) {
+                    mensaje.classList.remove('d-none');
+                    mensaje.innerHTML = `<div class="alert alert-warning text-center">
+                        <i class="bi bi-exclamation-circle"></i> No se encontraron productos.
+                    </div>`;
+                    return;
+                }
+
+                mensaje.classList.remove('d-none');
+                mensaje.innerHTML = `<div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> Se encontraron ${data.total} productos.
+                </div>`;
+
+                data.productos.forEach(prod => {
+                    const card = document.createElement('div');
+                    card.className = 'col-xl-3 col-lg-4 col-md-6';
+                    card.innerHTML = `
+                        <div class="producto-card">
+                            <img src="${prod.imagen}" alt="${prod.nombre}" class="product-image-placeholder" onerror="this.src='img/default.jpg'" />
+                            <div class="producto-header">
+                                <div>
+                                    <h3 class="producto-title">${prod.nombre}</h3>
+                                    <span class="producto-tipo">${prod.categoria}</span>
+                                </div>
+                                <div class="precio">$${prod.precio.toLocaleString('es-AR')}/${prod.unidad}</div>
+                            </div>
+                            <div class="productor-info">
+                                <div class="ubicacion">
+                                    <i class="bi bi-shop"></i>
+                                    <strong>${prod.punto_venta}</strong>
+                                </div>
+                                <div class="ubicacion">
+                                    <i class="bi bi-geo-alt"></i>
+                                    ${prod.direccion || ''}
+                                </div>
+                            </div>
+                            <p class="product-description">${prod.descripcion || ''}</p>
+                            <div class="disponibilidad">
+                                🕐 ${Array.isArray(prod.dias_disponibles) ? prod.dias_disponibles.join(', ') : ''}, ${prod.horario || ''}
+                            </div>
+                            <div class="stock-info mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-box-seam"></i> Stock: ${prod.stock_disponible} ${prod.unidad}
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                    gridProductos.appendChild(card);
+                });
+            })
+            .catch(() => {
+                spinner.classList.add('d-none');
+                mensaje.classList.remove('d-none');
+                mensaje.innerHTML = `<div class="alert alert-danger">
+                    <i class="bi bi-x-circle"></i> Error al realizar la búsqueda.
+                </div>`;
+            });
+    }
     </script>
 </body>
 </html>
