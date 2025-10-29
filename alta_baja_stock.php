@@ -92,7 +92,7 @@ $motivos_baja = [
             <h1 class="h3 text-success">📦 Alta/Baja de Stock</h1>
             <p class="text-muted mb-0">Productor: <strong><?= htmlspecialchars($nombre_productor) ?></strong></p>
         </div>
-        <a href="dashboard_productor.php" class="btn btn-outline-secondary">
+        <a href="dashboard_productor.php" style="background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; border: 1px solid #6c757d;">
             <i class="bi bi-arrow-left"></i> Volver al Dashboard
         </a>
     </div>

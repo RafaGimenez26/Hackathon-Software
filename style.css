@@ -576,3 +576,12 @@
                 gap: 8px;
             }
         }
+        /* Fix urgente para visibilidad del botón volver */
+        a.btn.btn-outline-secondary,
+        .btn-outline-secondary,
+        a[href="dashboard_productor.php"] {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+            pointer-events: auto !important;
+        }
