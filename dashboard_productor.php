@@ -125,11 +125,19 @@ try {
         <h1 class="h3 text-success">🌿 Panel del Productor</h1>
         <p class="text-muted mb-0">Bienvenido, <?= htmlspecialchars($nombre_productor) ?></p>
         <div>
+            <a href="libro_caja.php" class="btn btn-primary"><i class="bi bi-journal-text"></i> Libro de Caja</a>
             <a href="alta_baja_stock.php" class="btn btn-outline-secondary"><i class="bi bi-gear"></i> Alta/Baja de Stock</a>
             <a href="cargar_producto.php" class="btn btn-success">➕ Cargar Nuevo Producto</a>
             <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
             <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
         </div>
+        <!-- <div>
+            <a href="contabilidad_productor.php" class="btn btn-outline-info">📊 Sistema Contable</a>
+            <a href="alta_baja_stock.php" class="btn btn-outline-secondary"><i class="bi bi-gear"></i> Alta/Baja de Stock</a>
+            <a href="cargar_producto.php" class="btn btn-success">➕ Cargar Nuevo Producto</a>
+            <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
+            <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
+        </div> -->
     </div>
 
     <!-- Gráficos de Estadísticas -->
