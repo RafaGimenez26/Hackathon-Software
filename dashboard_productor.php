@@ -12,8 +12,6 @@ if (!isset($_SESSION['ProductorID'])) {
 $productor_id = $_SESSION['ProductorID'];
 $nombre_productor = $_SESSION['nombre_productor'];
 
-
-
 // === OBTENER DATOS DE VENTAS PARA GRÁFICOS ===
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['get_ventas_data'])) {
     try {
@@ -93,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['get_ventas_data'])) {
 
 // === CONSULTAR PRODUCTOS DEL PRODUCTOR ===
 try {
-    $productos = $collection->find(['productor_id' => (int)$productor_id]);
+    $productos = $collection->find(['productor_id' => (int)$productor_id])->toArray();
 } catch (Exception $e) {
     die("Error al obtener los productos: " . $e->getMessage());
 }
@@ -105,6 +103,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel del Productor - Mis Productos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -115,6 +114,33 @@ try {
         }
         .stats-card {
             border-left: 4px solid #198754;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box .form-control {
+            padding-right: 40px;
+        }
+        .search-box .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+        .no-results {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .result-count {
+            font-size: 0.9rem;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -131,13 +157,6 @@ try {
             <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
             <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
         </div>
-        <!-- <div>
-            <a href="contabilidad_productor.php" class="btn btn-outline-info">📊 Sistema Contable</a>
-            <a href="alta_baja_stock.php" class="btn btn-outline-secondary"><i class="bi bi-gear"></i> Alta/Baja de Stock</a>
-            <a href="cargar_producto.php" class="btn btn-success">➕ Cargar Nuevo Producto</a>
-            <a href="ver_pedidos.php" class="btn btn-outline-primary">📦 Ver mis pedidos</a>
-            <a href="logout.php" class="btn btn-outline-danger">Cerrar sesión</a>
-        </div> -->
     </div>
 
     <!-- Gráficos de Estadísticas -->
@@ -167,10 +186,24 @@ try {
     <!-- Tabla de Productos -->
     <div class="card shadow-sm border-0">
         <div class="card-body">
-            <h5 class="card-title mb-4">Mis Productos Publicados</h5>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="card-title mb-1">Mis Productos Publicados</h5>
+                    <p class="result-count mb-0">
+                        Mostrando <span id="count-visible"><?= count($productos) ?></span> de <span id="count-total"><?= count($productos) ?></span> productos
+                    </p>
+                </div>
+                <div class="search-box" style="width: 350px;">
+                    <input type="text" 
+                           id="searchInput" 
+                           class="form-control" 
+                           placeholder="🔍 Buscar por nombre, categoría o punto de venta...">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+            </div>
 
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle" id="productosTable">
                     <thead class="table-success">
                         <tr>
                             <th>Nombre</th>
@@ -182,30 +215,41 @@ try {
                             <th>Punto de Venta</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="productosTableBody">
                         <?php
                         $tieneProductos = false;
                         foreach ($productos as $p):
                             $tieneProductos = true;
                         ?>
-                        <tr id="row-<?php echo $p->_id; ?>">
-                            <td><?= htmlspecialchars($p->nombre ?? '—') ?></td>
-                            <td><?= htmlspecialchars($p->descripcion ?? '—') ?></td>
-                            <td><?= htmlspecialchars($p->categoria ?? '—') ?></td>
+                        <tr class="producto-row" 
+                            data-nombre="<?= htmlspecialchars(strtolower($p->nombre ?? '')) ?>"
+                            data-categoria="<?= htmlspecialchars(strtolower($p->categoria ?? '')) ?>"
+                            data-punto="<?= htmlspecialchars(strtolower($p->punto_venta ?? '')) ?>"
+                            data-descripcion="<?= htmlspecialchars(strtolower($p->descripcion ?? '')) ?>">
+                            <td class="search-field"><?= htmlspecialchars($p->nombre ?? '—') ?></td>
+                            <td class="search-field"><?= htmlspecialchars($p->descripcion ?? '—') ?></td>
+                            <td class="search-field"><?= htmlspecialchars($p->categoria ?? '—') ?></td>
                             <td>$<?= number_format($p->precio ?? 0, 2) ?></td>
                             <td><?= htmlspecialchars($p->stock_disponible ?? '0') ?></td>
                             <td><?= htmlspecialchars($p->unidad ?? '—') ?></td>
-                            <td><?= htmlspecialchars($p->punto_venta ?? '—') ?></td>
+                            <td class="search-field"><?= htmlspecialchars($p->punto_venta ?? '—') ?></td>
                         </tr>
                         <?php endforeach; ?>
 
                         <?php if (!$tieneProductos): ?>
-                        <tr>
+                        <tr id="emptyState">
                             <td colspan="7" class="text-muted py-4 text-center">Aún no has publicado productos.</td>
                         </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mensaje cuando no hay resultados -->
+            <div class="no-results" id="noResults">
+                <i class="bi bi-search" style="font-size: 3rem; opacity: 0.3;"></i>
+                <h5 class="mt-3">No se encontraron productos</h5>
+                <p>Intenta con otros términos de búsqueda</p>
             </div>
         </div>
     </div>
@@ -218,7 +262,82 @@ let productosChart = null;
 // Cargar datos de ventas al iniciar
 document.addEventListener('DOMContentLoaded', function() {
     cargarDatosVentas();
+    inicializarBuscador();
 });
+
+// === BUSCADOR DE PRODUCTOS ===
+function inicializarBuscador() {
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('.producto-row');
+    const noResults = document.getElementById('noResults');
+    const tableBody = document.getElementById('productosTableBody');
+    const countVisible = document.getElementById('count-visible');
+    const countTotal = document.getElementById('count-total');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const nombre = row.dataset.nombre;
+            const categoria = row.dataset.categoria;
+            const punto = row.dataset.punto;
+            const descripcion = row.dataset.descripcion;
+            
+            // Buscar en todos los campos
+            const match = nombre.includes(searchTerm) || 
+                         categoria.includes(searchTerm) || 
+                         punto.includes(searchTerm) ||
+                         descripcion.includes(searchTerm);
+            
+            if (match || searchTerm === '') {
+                row.style.display = '';
+                visibleCount++;
+                
+                // Resaltar términos coincidentes
+                if (searchTerm !== '') {
+                    highlightText(row, searchTerm);
+                } else {
+                    removeHighlight(row);
+                }
+            } else {
+                row.style.display = 'none';
+                removeHighlight(row);
+            }
+        });
+        
+        // Actualizar contador
+        countVisible.textContent = visibleCount;
+        
+        // Mostrar/ocultar mensaje de no resultados
+        if (visibleCount === 0 && rows.length > 0) {
+            noResults.style.display = 'block';
+            tableBody.style.display = 'none';
+        } else {
+            noResults.style.display = 'none';
+            tableBody.style.display = '';
+        }
+    });
+}
+
+// Función para resaltar texto
+function highlightText(row, searchTerm) {
+    const cells = row.querySelectorAll('.search-field');
+    cells.forEach(cell => {
+        const text = cell.textContent;
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const highlightedText = text.replace(regex, '<span class="highlight">$1</span>');
+        cell.innerHTML = highlightedText;
+    });
+}
+
+// Función para quitar resaltado
+function removeHighlight(row) {
+    const cells = row.querySelectorAll('.search-field');
+    cells.forEach(cell => {
+        cell.innerHTML = cell.textContent;
+    });
+}
 
 // === Función para cargar datos de ventas ===
 function cargarDatosVentas() {
