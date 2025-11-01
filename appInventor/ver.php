@@ -38,9 +38,8 @@ try {
         
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            min-height: 100vh;
+            background: #f5f5f5;
+            padding: 10px;
         }
         
         .container {
@@ -50,109 +49,87 @@ try {
         
         .header {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-        
-        .header h1 {
-            color: #667eea;
-            font-size: 32px;
+            padding: 12px;
+            border-bottom: 2px solid #ddd;
             margin-bottom: 10px;
         }
         
+        .header h1 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
         .total {
-            font-size: 20px;
+            font-size: 13px;
             color: #666;
-            font-weight: bold;
         }
         
         .usuario-card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .usuario-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 10px;
         }
         
         .usuario-id {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #4a5568;
             color: white;
             display: inline-block;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 22px;
+            padding: 4px 10px;
+            font-size: 13px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         
         .campo {
-            margin-bottom: 18px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 5px solid #667eea;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .campo:last-child {
+            border-bottom: none;
         }
         
         .campo-label {
-            font-size: 16px;
+            font-size: 11px;
             color: #666;
             font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             display: block;
-            letter-spacing: 1px;
         }
         
         .campo-valor {
-            font-size: 22px;
+            font-size: 14px;
             color: #333;
-            font-weight: 500;
             word-wrap: break-word;
         }
         
         .no-datos {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
+            padding: 20px;
             text-align: center;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
         }
         
         .no-datos-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
+            font-size: 40px;
+            margin-bottom: 10px;
         }
         
         .no-datos-texto {
-            font-size: 24px;
+            font-size: 14px;
             color: #666;
-            font-weight: bold;
         }
         
         .error {
-            background: #ff6b6b;
+            background: #f44336;
             color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            font-size: 20px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
             text-align: center;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-        }
-        
-        .divider {
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #667eea, transparent);
-            margin: 15px 0;
         }
     </style>
 </head>
