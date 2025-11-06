@@ -163,11 +163,17 @@ function getCategoriaEmoji($categoria) {
         </div>
 
         <div class="nav-tabs-custom">
+            
             <a class="tab-btn active" href="index.php">🛒 Ver Productos</a>
             <a class="tab-btn" href="registro.php">👨‍🌾 Registrarse como Productor</a>
             <a class="tab-btn" href="misproductos.php">📦 Mis Productos</a>
             <a class="tab-btn" href="pedidos.php">🛍️ Mis Pedidos</a>
             <a class="tab-btn" href="loginus.php">👤 Sector Clientes</a>
+
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <img src="img/contacto.jpg" alt="Contacto" style="height: 120px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         </div>
 
         <!-- CONTENIDO DE PRODUCTOS -->
