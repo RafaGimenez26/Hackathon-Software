@@ -14,7 +14,7 @@ if (file_exists(__DIR__ . '/.env')) {
 
 // 2. Detectar si estamos en Railway
 $isRailway = isset($_ENV['RAILWAY_ENVIRONMENT']) || getenv('RAILWAY_ENVIRONMENT');
-
+/*
 // 3. Obtener credenciales MySQL según el entorno
 if ($isRailway) {
     // Variables de Railway MySQL (se generan automáticamente)
@@ -31,6 +31,12 @@ if ($isRailway) {
     $base_de_datos = $_ENV['dbname'] ?? 'MercadoAgricolaLocal';
     $puerto = $_ENV['port'] ?? 3306;
 }
+*/
+$host = "localhost";
+$usuario = "root";
+$password = "";
+$base_de_datos = "MercadoAgricolaLocal"; 
+$puerto = 3306;
 
 // 4. Establecer la conexión MySQL
 $conexion = new mysqli($host, $usuario, $password, $base_de_datos, $puerto);
